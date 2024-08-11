@@ -1,0 +1,380 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor} % Pakiet do zmiany koloru tła
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Przewodnik po .NET}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+.NET to platforma programistyczna stworzona przez Microsoft, która pozwala na tworzenie aplikacji na różne platformy. W tym dokumencie omówimy najważniejsze komponenty w architekturze aplikacji .NET, takie jak kontrolery, serwisy, repozytoria, middleware oraz bezpieczeństwo za pomocą JWT.
+
+\section{Kontrolery}
+Kontrolery w .NET odpowiadają za obsługę żądań HTTP i zwracanie odpowiednich odpowiedzi. Zazwyczaj są to klasy, które dziedziczą po \texttt{ControllerBase} lub \texttt{Controller}.
+
+\begin{lstlisting}[language=C#, caption=Przykład kontrolera w .NET]
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    private readonly IUserService _userService;
+
+    public UsersController(IUserService userService)
+    {
+        _userService = userService;
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetUser(int id)
+    {
+        var user = _userService.GetUserById(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+        return Ok(user);
+    }
+}
+\end{lstlisting}
+
+\section{Serwisy}
+Serwisy w .NET służą do enkapsulacji logiki biznesowej. Są one rejestrowane w kontenerze Dependency Injection (DI) i wstrzykiwane do kontrolerów.
+
+\begin{lstlisting}[language=C#, caption=Przykład serwisu w .NET]
+public interface IUserService
+{
+    User GetUserById(int id);
+}
+
+public class UserService : IUserService
+{
+    private readonly IUserRepository _userRepository;
+
+    public UserService(IUserRepository userRepository)
+    {
+        _userRepository = userRepository;
+    }
+
+    public User GetUserById(int id)
+    {
+        return _userRepository.FindById(id);
+    }
+}
+\end{lstlisting}
+
+\section{Repozytoria}
+Repozytoria w .NET są odpowiedzialne za komunikację z bazą danych. Służą do abstrakcji operacji na danych, co ułatwia testowanie oraz utrzymanie aplikacji.
+
+\begin{lstlisting}[language=C#, caption=Przykład repozytorium w .NET]
+public interface IUserRepository
+{
+    User FindById(int id);
+}
+
+public class UserRepository : IUserRepository
+{
+    private readonly ApplicationDbContext _context;
+
+    public UserRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public User FindById(int id)
+    {
+        return _context.Users.Find(id);
+    }
+}
+\end{lstlisting}
+
+\section{Łączenie z bazą danych}
+W .NET najczęściej używa się Entity Framework (EF) do komunikacji z bazą danych. Konfiguracja połączenia z bazą danych odbywa się w \texttt{Startup.cs} lub \texttt{Program.cs}.
+
+\begin{lstlisting}[language=C#, caption=Konfiguracja Entity Framework]
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+    }
+}
+\end{lstlisting}
+
+\section{JWT (JSON Web Token)}
+JWT jest standardem bezpiecznego przesyłania informacji pomiędzy stronami jako obiekt JSON. W .NET JWT są często używane do autoryzacji użytkowników.
+
+\subsection{Konfiguracja JWT}
+Aby skonfigurować JWT w .NET, należy dodać odpowiednie usługi w \texttt{Startup.cs} lub \texttt{Program.cs}.
+
+\begin{lstlisting}[language=C#, caption=Konfiguracja JWT]
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = Configuration["Jwt:Issuer"],
+            ValidAudience = Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+        };
+    });
+
+    services.AddControllers();
+}
+\end{lstlisting}
+
+\subsection{Generowanie JWT}
+Aby wygenerować JWT, należy stworzyć metodę, która stworzy token na podstawie danych użytkownika.
+
+\begin{lstlisting}[language=C#, caption=Przykład generowania JWT]
+public string GenerateJwtToken(User user)
+{
+    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+    var claims = new[]
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
+
+    var token = new JwtSecurityToken(
+        issuer: _configuration["Jwt:Issuer"],
+        audience: _configuration["Jwt:Audience"],
+        claims: claims,
+        expires: DateTime.Now.AddMinutes(30),
+        signingCredentials: credentials);
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+\end{lstlisting}
+
+\section{Hashowanie haseł}
+W .NET do hashowania haseł można użyć wbudowanego narzędzia \texttt{PasswordHasher}, które jest częścią biblioteki \texttt{Microsoft.AspNetCore.Identity}.
+
+\begin{lstlisting}[language=C#, caption=Przykład hashowania hasła]
+public class UserService : IUserService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IPasswordHasher<User> _passwordHasher;
+
+    public UserService(IUserRepository userRepository, IPasswordHasher<User> passwordHasher)
+    {
+        _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
+    }
+
+    public void RegisterUser(User user, string password)
+    {
+        user.PasswordHash = _passwordHasher.HashPassword(user, password);
+        _userRepository.Add(user);
+    }
+}
+\end{lstlisting}
+
+\section{Middlewary}
+Middlewary w .NET to komponenty, które są używane do przetwarzania żądań HTTP na różnych etapach ich cyklu życia. Można je wykorzystać np. do logowania, autoryzacji lub obsługi błędów.
+
+\begin{lstlisting}[language=C#, caption=Przykład tworzenia middleware]
+public class LoggingMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public LoggingMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        Console.WriteLine($"Request for {context.Request.Path} received at {DateTime.Now}");
+        await _next(context);
+        Console.WriteLine($"Response for {context.Request.Path} sent at {DateTime.Now}");
+    }
+}
+
+// W Startup.cs
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    app.UseMiddleware<LoggingMiddleware>();
+    app.UseRouting();
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+    });
+}
+\end{lstlisting}
+
+\section{Guardy}
+Guardy to mechanizmy w .NET, które można używać do ochrony określonych zasobów przed nieautoryzowanym dostępem. Można je implementować za pomocą polityk autoryzacyjnych.
+
+\begin{lstlisting}[language=C#, caption=Przykład implementacji guardu]
+public class AdminGuard : IAuthorizationRequirement
+{
+}
+
+public class AdminGuardHandler : AuthorizationHandler<AdminGuard>
+{
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, AdminGuard requirement)
+    {
+        if (context.User.IsInRole("Admin"))
+        {
+            context.Succeed(requirement);
+        }
+        return Task.CompletedTask;
+    }
+}
+
+// W Startup.cs
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddAuthorization(options =>
+    {
+        options.AddPolicy("AdminOnly", policy => policy.Requirements.Add(new AdminGuard()));
+    });
+    services.AddSingleton<IAuthorizationHandler, AdminGuardHandler>();
+}
+\end{lstlisting}
+
+\section{Inne ważne aspekty}
+
+\subsection{Konfiguracja Dependency Injection (DI)}
+Dependency Injection (DI) to mechanizm pozwalający na wstrzykiwanie zależności do komponentów takich jak serwisy, kontrolery czy repozytoria.
+
+\begin{lstlisting}[language=C#, caption=Przykład konfiguracji DI w Startup.cs]
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddTransient<IUserService, UserService>();
+    services.AddScoped<IUserRepository, UserRepository>();
+    services.AddSingleton<ILogger, Logger>();
+}
+\end{lstlisting}
+
+\subsection{Obsługa wyjątków globalnych}
+W .NET można skonfigurować globalną obsługę wyjątków za pomocą middleware.
+
+\begin{lstlisting}[language=C#, caption=Przykład globalnej obsługi wyjątków]
+public class ExceptionMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public ExceptionMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+        var result = JsonConvert.SerializeObject(new { error = exception.Message });
+        return context.Response.WriteAsync(result);
+    }
+}
+
+// W Startup.cs
+public void Configure(IApplicationBuilder app)
+{
+    app.UseMiddleware<ExceptionMiddleware>();
+    app.UseRouting();
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+    });
+}
+\end{lstlisting}
+
+\subsection{Swagger - dokumentacja API}
+Swagger to narzędzie do automatycznego generowania dokumentacji API. W .NET można je łatwo skonfigurować.
+
+\begin{lstlisting}[language=C#, caption=Konfiguracja Swagger w Startup.cs]
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+    });
+}
+
+public void Configure(IApplicationBuilder app)
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+    });
+}
+\end{lstlisting}
+
+\section{Podsumowanie}
+.NET jest wszechstronną platformą, która pozwala na tworzenie rozbudowanych aplikacji webowych z użyciem nowoczesnych wzorców projektowych. Dobre zrozumienie takich komponentów jak serwisy, repozytoria, middleware czy mechanizmy autoryzacji i autentykacji pozwala na budowanie skalowalnych i bezpiecznych aplikacji.
+
+\end{document}

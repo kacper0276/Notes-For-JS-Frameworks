@@ -1,0 +1,337 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor} % Pakiet do zmiany koloru tła
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Przewodnik po Vue.js}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+Vue.js to progresywny framework JavaScriptowy do budowania interfejsów użytkownika. Zapewnia elastyczność oraz możliwość integracji z różnymi projektami, co czyni go popularnym wyborem wśród deweloperów.
+
+\section{Cykl życia komponentów}
+Cykl życia komponentu składa się z kilku etapów:
+\begin{itemize}
+    \item \textbf{beforeCreate} - Inicjalizacja komponentu, brak dostępu do danych i metod.
+    \item \textbf{created} - Dostęp do danych i metod, komponent nie jest jeszcze zamontowany na DOM.
+    \item \textbf{beforeMount} - Komponent jest gotowy do zamontowania na DOM.
+    \item \textbf{mounted} - Komponent został zamontowany na DOM.
+    \item \textbf{beforeUpdate} - Przed aktualizacją komponentu w odpowiedzi na zmiany w danych.
+    \item \textbf{updated} - Po aktualizacji komponentu na DOM.
+    \item \textbf{beforeUnmount} - Przed usunięciem komponentu z DOM.
+    \item \textbf{unmounted} - Komponent został usunięty z DOM.
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia cyklu życia komponentu]
+export default {
+  data() {
+    return {
+      message: 'Hello Vue!'
+    }
+  },
+  created() {
+    console.log('Komponent został utworzony');
+  },
+  mounted() {
+    console.log('Komponent został zamontowany na DOM');
+  }
+}
+\end{lstlisting}
+
+\section{Computed Properties i Watch}
+\subsection{Computed Properties}
+Computed properties to właściwości, które są obliczane na podstawie innych danych. Vue.js buforuje wyniki obliczeń, więc są one aktualizowane tylko wtedy, gdy zależne dane ulegają zmianie.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład computed properties]
+export default {
+  data() {
+    return {
+      firstName: 'John',
+      lastName: 'Doe'
+    }
+  },
+  computed: {
+    fullName() {
+      return this.firstName + ' ' + this.lastName;
+    }
+  }
+}
+\end{lstlisting}
+
+\subsection{Watch}
+Watch to mechanizm obserwujący zmiany w danych i uruchamiający określoną funkcję w odpowiedzi na te zmiany. Jest użyteczny, gdy potrzebujemy wykonać operacje asynchroniczne lub kosztowne obliczenia.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład watch]
+export default {
+  data() {
+    return {
+      query: ''
+    }
+  },
+  watch: {
+    query(newValue, oldValue) {
+      this.fetchResults(newValue);
+    }
+  },
+  methods: {
+    fetchResults(query) {
+      // Logika do pobierania wyników wyszukiwania
+    }
+  }
+}
+\end{lstlisting}
+
+\section{Dyrektywy}
+Dyrektywy w Vue.js umożliwiają manipulację DOM poprzez specjalne atrybuty. Poniżej znajdują się przykłady popularnych dyrektyw.
+
+\begin{itemize}
+    \item \texttt{v-bind} - Służy do dynamicznego przypisania atrybutów lub właściwości do elementów.
+    \item \texttt{v-if} / \texttt{v-else-if} / \texttt{v-else} - Renderowanie warunkowe.
+    \item \texttt{v-for} - Iteracja po kolekcji danych.
+    \item \texttt{v-on} - Obsługa zdarzeń.
+    \item \texttt{v-model} - Dwukierunkowe wiązanie danych.
+\end{itemize}
+
+\begin{lstlisting}[language=HTML, caption=Przykład dyrektyw w Vue.js]
+<div v-if="isVisible">Widoczne</div>
+<ul>
+  <li v-for="item in items" :key="item.id">{{ item.name }}</li>
+</ul>
+<button @click="handleClick">Kliknij mnie</button>
+<input v-model="message" placeholder="Wpisz wiadomość">
+\end{lstlisting}
+
+\section{Przekazywanie danych między komponentami}
+\subsection{Od rodzica do dziecka (Props)}
+Dane mogą być przekazywane od komponentu rodzica do dziecka poprzez propsy.
+
+\begin{lstlisting}[language=JavaScript, caption=Przekazywanie danych przez props]
+<!-- Komponent rodzic -->
+<template>
+  <ChildComponent :message="parentMessage" />
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      parentMessage: 'Hello from parent'
+    }
+  }
+}
+</script>
+
+<!-- Komponent dziecko -->
+<template>
+  <p>{{ message }}</p>
+</template>
+
+<script>
+export default {
+  props: ['message']
+}
+</script>
+\end{lstlisting}
+
+\subsection{Od dziecka do rodzica (Emitowanie zdarzeń)}
+Dziecko może komunikować się z rodzicem poprzez emitowanie zdarzeń.
+
+\begin{lstlisting}[language=JavaScript, caption=Emitowanie zdarzenia przez dziecko]
+<!-- Komponent dziecko -->
+<template>
+  <button @click="sendMessage">Send Message</button>
+</template>
+
+<script>
+export default {
+  methods: {
+    sendMessage() {
+      this.$emit('messageSent', 'Hello from child');
+    }
+  }
+}
+\end{lstlisting}
+
+<!-- Komponent rodzic -->
+<template>
+  <ChildComponent @messageSent="handleMessage" />
+</template>
+
+<script>
+export default {
+  methods: {
+    handleMessage(msg) {
+      console.log(msg);
+    }
+  }
+}
+</script>
+\end{lstlisting}
+
+\section{Sloty}
+Sloty umożliwiają przekazywanie zawartości HTML z komponentu rodzica do dziecka, co pozwala na większą elastyczność w tworzeniu komponentów wielokrotnego użytku.
+
+\begin{lstlisting}[language=HTML, caption=Przykład użycia slotów]
+<!-- Komponent dziecko -->
+<template>
+  <div class="card">
+    <slot></slot> <!-- Standardowy slot -->
+  </div>
+</template>
+
+<!-- Komponent rodzic -->
+<template>
+  <CardComponent>
+    <p>Treść przekazana przez slot</p>
+  </CardComponent>
+</template>
+\end{lstlisting}
+
+\section{Mixiny}
+Mixiny to mechanizm pozwalający na współdzielenie funkcjonalności pomiędzy różnymi komponentami. Umożliwiają one współdzielenie metod, danych, oraz innych opcji.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia mixinów]
+export const myMixin = {
+  data() {
+    return {
+      mixinData: 'To jest dane z mixinu'
+    }
+  },
+  methods: {
+    mixinMethod() {
+      console.log('To jest metoda z mixinu');
+    }
+  }
+}
+
+export default {
+  mixins: [myMixin],
+  mounted() {
+    console.log(this.mixinData); // 'To jest dane z mixinu'
+    this.mixinMethod(); // 'To jest metoda z mixinu'
+  }
+}
+\end{lstlisting}
+
+\section{Provide/Inject}
+Mechanizm \texttt{provide/inject} pozwala na przekazywanie danych z komponentu rodzica do dziecka bez konieczności przekazywania ich przez każdy pośredni komponent (prop drilling).
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia provide/inject]
+<!-- Komponent rodzic -->
+<template>
+  <ChildComponent />
+</template>
+
+<script>
+export default {
+  provide() {
+    return {
+      message: 'Hello from parent'
+    }
+  }
+}
+</script>
+
+<!-- Komponent dziecko -->
+<template>
+  <p>{{ message }}</p>
+</template>
+
+<script>
+export default {
+  inject: ['message']
+}
+</script>
+\end{lstlisting}
+
+\section{Dynamiczne komponenty}
+Vue.js umożliwia dynamiczne ładowanie i renderowanie komponentów w oparciu o zmienne.
+
+\begin{lstlisting}[language=HTML, caption=Przykład dynamicznych komponentów]
+<template>
+  <component :is="currentComponent"></component>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      currentComponent: 'ComponentA'
+    }
+  },
+  components: {
+    ComponentA,
+    ComponentB
+  }
+}
+</script>
+\end{lstlisting}
+
+\section{\texttt{script setup} vs tradycyjny \texttt{script}}
+Vue 3 wprowadził nową składnię \texttt{script setup}, która upraszcza kod komponentu.
+
+\begin{itemize}
+    \item \textbf{\texttt{script setup}} - Lepsza wydajność, bardziej zwarta składnia, brak potrzeby jawnej deklaracji zwracanych danych.
+    \item \textbf{Tradycyjny \texttt{script}} - Większa elastyczność, szczególnie w skomplikowanych komponentach, lepsza czytelność dla większych zespołów.
+\end{itemize}
+
+\begin{lstlisting}[language=HTML, caption=Przykład użycia \texttt{script setup}]
+<template>
+  <p>{{ message }}</p>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+const message = ref('Hello from script setup')
+</script>
+\end{lstlisting}
+
+W przypadku prostych komponentów i projektów \texttt{script setup} jest zalecany ze względu na prostotę i wydajność. W bardziej złożonych komponentach, szczególnie gdy potrzebujemy pełnej kontroli nad cyklem życia komponentu, tradycyjny \texttt{script} może być lepszym wyborem.
+
+\section{Podsumowanie}
+Vue.js oferuje szeroki wachlarz narzędzi do tworzenia dynamicznych, interaktywnych interfejsów użytkownika. Wybór odpowiednich technik i narzędzi zależy od specyficznych wymagań projektu oraz preferencji zespołu.
+
+\end{document}

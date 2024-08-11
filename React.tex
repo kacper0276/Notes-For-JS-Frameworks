@@ -1,0 +1,373 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor}
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Zaawansowany Przewodnik po React.js}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+React to biblioteka JavaScript służąca do tworzenia dynamicznych interfejsów użytkownika. W tym dokumencie omówimy zaawansowane aspekty Reacta, w tym szczegółowy opis hooków, serwisy, interceptory, zarządzanie stanem i routing.
+
+\section{Komponenty}
+Komponenty są podstawowymi elementami Reacta. Możemy je tworzyć zarówno jako funkcjonalne komponenty, jak i komponenty klasowe.
+
+\subsection{Funkcyjne komponenty}
+Funkcyjne komponenty są prostymi funkcjami, które przyjmują \texttt{props} i zwracają elementy Reacta.
+
+\begin{lstlisting}[language=JavaScript, caption=Prosty funkcjonalny komponent]
+import React from 'react';
+
+function Welcome(props) {
+  return <h1>Hello, {props.name}</h1>;
+}
+
+export default Welcome;
+\end{lstlisting}
+
+\subsection{Komponenty klasowe}
+Komponenty klasowe oferują bardziej rozbudowaną funkcjonalność, taką jak zarządzanie stanem.
+
+\begin{lstlisting}[language=JavaScript, caption=Komponent klasowy]
+import React, { Component } from 'react';
+
+class Welcome extends Component {
+  render() {
+    return <h1>Hello, {this.props.name}</h1>;
+  }
+}
+
+export default Welcome;
+\end{lstlisting}
+
+\section{Hooki w React}
+Hooki to funkcje, które pozwalają na "zaczepienie" się w wewnętrzne mechanizmy Reacta, takie jak stan, cykl życia komponentu, itp.
+
+\subsection{\texttt{useState}}
+\texttt{useState} to hook, który umożliwia zarządzanie stanem w funkcjonalnych komponentach.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useState}]
+import React, { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  );
+}
+
+export default Counter;
+\end{lstlisting}
+
+\subsection{\texttt{useEffect}}
+\texttt{useEffect} pozwala na wykonywanie efektów ubocznych, takich jak pobieranie danych z API, po każdym renderowaniu komponentu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useEffect}]
+import React, { useState, useEffect } from 'react';
+
+function DataFetcher({ url }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch(url)
+      .then(response => response.json())
+      .then(data => setData(data));
+  }, [url]);
+
+  return (
+    <div>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+
+export default DataFetcher;
+\end{lstlisting}
+
+\subsection{\texttt{useContext}}
+\texttt{useContext} pozwala na korzystanie z kontekstu Reacta w komponentach funkcyjnych.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useContext}]
+import React, { useContext } from 'react';
+
+const ThemeContext = React.createContext('light');
+
+function ThemedButton() {
+  const theme = useContext(ThemeContext);
+  return <button className={theme}>I am styled by theme context!</button>;
+}
+
+export default ThemedButton;
+\end{lstlisting}
+
+\subsection{\texttt{useReducer}}
+\texttt{useReducer} to zaawansowany hook do zarządzania stanem komponentu, podobny do \texttt{useState}, ale umożliwiający bardziej złożoną logikę aktualizacji stanu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useReducer}]
+import React, { useReducer } from 'react';
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return { count: state.count + 1 };
+    case 'decrement':
+      return { count: state.count - 1 };
+    default:
+      throw new Error();
+  }
+}
+
+function Counter() {
+  const [state, dispatch] = useReducer(reducer, { count: 0 });
+
+  return (
+    <div>
+      <p>Count: {state.count}</p>
+      <button onClick={() => dispatch({ type: 'increment' })}>+</button>
+      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>
+    </div>
+  );
+}
+
+export default Counter;
+\end{lstlisting}
+
+\subsection{\texttt{useRef}}
+\texttt{useRef} pozwala na tworzenie referencji do elementów DOM lub przechowywanie zmiennych, które nie powodują ponownego renderowania komponentu przy zmianie wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useRef}]
+import React, { useRef } from 'react';
+
+function FocusableInput() {
+  const inputRef = useRef(null);
+
+  const focusInput = () => {
+    inputRef.current.focus();
+  };
+
+  return (
+    <div>
+      <input ref={inputRef} type="text" />
+      <button onClick={focusInput}>Focus the input</button>
+    </div>
+  );
+}
+
+export default FocusableInput;
+\end{lstlisting}
+
+\subsection{\texttt{useMemo}}
+\texttt{useMemo} pozwala na memoizację wartości, która zostanie ponownie obliczona tylko wtedy, gdy zależności się zmienią, co jest przydatne do optymalizacji wydajności.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useMemo}]
+import React, { useMemo } from 'react';
+
+function ExpensiveCalculationComponent({ num }) {
+  const calculation = useMemo(() => {
+    return expensiveCalculation(num);
+  }, [num]);
+
+  return <div>Result: {calculation}</div>;
+}
+
+function expensiveCalculation(num) {
+  // skomplikowana operacja
+  return num * 2;
+}
+
+export default ExpensiveCalculationComponent;
+\end{lstlisting}
+
+\subsection{\texttt{useCallback}}
+\texttt{useCallback} memoizuje funkcje, zapobiegając ich ponownemu tworzeniu podczas każdego renderowania, co jest przydatne, gdy przekazujemy funkcje do komponentów zależnych.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{useCallback}]
+import React, { useState, useCallback } from 'react';
+
+function ParentComponent() {
+  const [count, setCount] = useState(0);
+
+  const increment = useCallback(() => {
+    setCount(count + 1);
+  }, [count]);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <ChildComponent onIncrement={increment} />
+    </div>
+  );
+}
+
+function ChildComponent({ onIncrement }) {
+  return <button onClick={onIncrement}>Increment</button>;
+}
+
+export default ParentComponent;
+\end{lstlisting}
+
+\section{Zaawansowane zarządzanie stanem}
+Poza podstawowymi hookami, takimi jak \texttt{useState} i \texttt{useReducer}, React oferuje narzędzia takie jak Context API oraz biblioteki zewnętrzne, jak Redux, do zarządzania globalnym stanem aplikacji.
+
+\subsection{Context API}
+Context API pozwala na przekazywanie danych przez drzewo komponentów bez konieczności ręcznego przekazywania \texttt{props} na każdym poziomie.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia Context API]
+import React, { createContext, useContext, useState } from 'react';
+
+const CountContext = createContext();
+
+function CounterProvider({ children }) {
+  const [count, setCount] = useState(0);
+  return (
+    <CountContext.Provider value={{ count, setCount }}>
+      {children}
+    </CountContext.Provider>
+  );
+}
+
+function CounterDisplay() {
+  const { count } = useContext(CountContext);
+  return <div>Count: {count}</div>;
+}
+
+function IncrementButton() {
+  const { setCount } = useContext(CountContext);
+  return <button onClick={() => setCount(count => count + 1)}>Increment</button>;
+}
+
+function App() {
+  return (
+    <CounterProvider>
+      <CounterDisplay />
+      <IncrementButton />
+    </CounterProvider>
+  );
+}
+
+export default App;
+\end{lstlisting}
+
+\subsection{Redux}
+Redux to popularna biblioteka do zarządzania stanem aplikacji. Stan aplikacji jest przechowywany w jednym miejscu zwanym \texttt{store}, a zmiany w stanie są realizowane przez \texttt{actions} i \texttt{reducers}.
+
+\section{Routing}
+Routing w React można zrealizować za pomocą biblioteki \texttt{react-router}, która pozwala na tworzenie nawigacji między różnymi widokami aplikacji.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{react-router}]
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+
+function Home() {
+  return <h2>Home</h2>;
+}
+
+function About() {
+  return <h2>About</h2>;
+}
+
+function App() {
+  return (
+    <Router>
+      <Switch>
+        <Route path="/about">
+          <About />
+        </Route>
+        <Route path="/">
+          <Home />
+        </Route>
+      </Switch>
+    </Router>
+  );
+}
+
+export default App;
+\end{lstlisting}
+
+\section{Serwisy}
+Serwisy w React mogą być tworzone jako osobne moduły do zarządzania logiką aplikacji, szczególnie w zakresie interakcji z API.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład serwisu API]
+class ApiService {
+  static async fetchData(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch data');
+    }
+    return response.json();
+  }
+}
+
+export default ApiService;
+\end{lstlisting}
+
+\section{Interceptors}
+Interceptors mogą być używane do przechwytywania żądań lub odpowiedzi HTTP w celu dodania logiki przed lub po wysłaniu żądania.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia Interceptorów w Axios]
+import axios from 'axios';
+
+axios.interceptors.request.use(request => {
+  // Dodaj nagłówki, tokeny itp.
+  return request;
+});
+
+axios.interceptors.response.use(response => {
+  // Przetwarzaj odpowiedzi, błędy itp.
+  return response;
+}, error => {
+  // Obsługa błędów
+  return Promise.reject(error);
+});
+\end{lstlisting}
+
+\section{Podsumowanie}
+W tym dokumencie omówiliśmy zaawansowane aspekty tworzenia aplikacji w React, takie jak użycie hooków, serwisów, interceptorów oraz zarządzanie stanem. React oferuje elastyczne narzędzia do budowania złożonych interfejsów użytkownika, co czyni go jednym z najpopularniejszych wyborów wśród deweloperów front-endu.
+
+\end{document}

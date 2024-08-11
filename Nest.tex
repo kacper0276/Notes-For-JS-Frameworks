@@ -1,0 +1,288 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor}
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Zaawansowany Przewodnik po NestJS}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+NestJS to framework do budowania aplikacji serwerowych w Node.js, który wspiera TypeScript i korzysta z dekoratorów oraz architektury opartej na modułach. Ułatwia tworzenie skalowalnych aplikacji dzięki wbudowanym mechanizmom, takim jak Dependency Injection i obsługa middleware.
+
+\section{Kontrolery}
+Kontrolery w NestJS są odpowiedzialne za obsługę żądań HTTP i delegowanie zadań do serwisów. Każdy kontroler odpowiada za jedną grupę funkcjonalności aplikacji.
+
+\subsection{Przykład Kontrolera}
+\begin{lstlisting}[language=TypeScript, caption=Przykład kontrolera w NestJS]
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get(':id')
+  async getUser(@Param('id') id: string) {
+    return this.usersService.getUser(id);
+  }
+
+  @Post()
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createUser(createUserDto);
+  }
+}
+\end{lstlisting}
+
+\section{Serwisy}
+Serwisy w NestJS są klasami, które zawierają logikę biznesową aplikacji i mogą komunikować się z bazą danych lub innymi źródłami danych. Serwisy są wstrzykiwane do kontrolerów i innych serwisów za pomocą Dependency Injection.
+
+\subsection{Przykład Serwisu}
+\begin{lstlisting}[language=TypeScript, caption=Przykład serwisu w NestJS]
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async getUser(id: string): Promise<User> {
+    return this.userRepository.findOneBy({ id });
+  }
+
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    const user = this.userRepository.create(createUserDto);
+    return this.userRepository.save(user);
+  }
+}
+\end{lstlisting}
+
+\section{Repozytoria}
+Repozytoria w NestJS zarządzają interakcją z bazą danych i są zwykle tworzone przy użyciu ORM, takiego jak TypeORM.
+
+\subsection{Przykład Repozytorium}
+\begin{lstlisting}[language=TypeScript, caption=Przykład repozytorium w NestJS]
+import { EntityRepository, Repository } from 'typeorm';
+import { User } from './user.entity';
+
+@EntityRepository(User)
+export class UserRepository extends Repository<User> {
+  // Dodatkowe metody repozytorium mogą być zdefiniowane tutaj
+}
+\end{lstlisting}
+
+\section{JWT (JSON Web Token)}
+JWT jest używany w NestJS do autoryzacji i uwierzytelniania. Używa się biblioteki `@nestjs/jwt` do generowania i weryfikowania tokenów.
+
+\subsection{Przykład Generowania i Weryfikowania Tokenu}
+\begin{lstlisting}[language=TypeScript, caption=Przykład użycia JWT w NestJS]
+import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+
+@Injectable()
+export class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+
+  async generateToken(payload: any) {
+    return this.jwtService.sign(payload);
+  }
+
+  async verifyToken(token: string) {
+    return this.jwtService.verify(token);
+  }
+}
+\end{lstlisting}
+
+\section{Hashowanie Haseł}
+Do hashowania haseł w NestJS można użyć biblioteki `bcrypt`.
+
+\subsection{Przykład Hashowania Haseł}
+\begin{lstlisting}[language=TypeScript, caption=Przykład hashowania haseł przy użyciu bcrypt]
+import * as bcrypt from 'bcrypt';
+
+export class AuthService {
+  async hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt();
+    return bcrypt.hash(password, salt);
+  }
+
+  async comparePassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash);
+  }
+}
+\end{lstlisting}
+
+\section{Middleware}
+Middleware w NestJS to klasy implementujące interfejs `NestMiddleware`, które mogą modyfikować żądania i odpowiedzi.
+
+\subsection{Przykład Middleware}
+\begin{lstlisting}[language=TypeScript, caption=Przykład middleware w NestJS]
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    console.log(`Request made to: ${req.url}`);
+    next();
+  }
+}
+\end{lstlisting}
+
+\section{Guardy}
+Guardy w NestJS służą do autoryzacji i decydują, czy żądanie może przejść do kontrolera. Implementują interfejs `CanActivate`.
+
+\subsection{Przykład Guarcu}
+\begin{lstlisting}[language=TypeScript, caption=Przykład guardu w NestJS]
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    const token = request.headers['authorization'];
+    return token === 'valid-token';
+  }
+}
+\end{lstlisting}
+
+\section{Interceptory}
+Interceptory w NestJS mogą modyfikować żądania i odpowiedzi oraz realizować dodatkowe operacje, takie jak logowanie czy modyfikacja danych odpowiedzi.
+
+\subsection{Przykład Interceptora}
+\begin{lstlisting}[language=TypeScript, caption=Przykład interceptora w NestJS]
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+
+@Injectable()
+export class ResponseInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    console.log('Before handling request');
+    return next.handle().pipe(
+      tap(() => console.log('After handling request'))
+    );
+  }
+}
+\end{lstlisting}
+
+\section{Protected Routes}
+Protected routes w NestJS są zabezpieczane za pomocą guardów, które sprawdzają autoryzację przed dostępem do chronionych zasobów.
+
+\subsection{Przykład Chronionej Trasy}
+\begin{lstlisting}[language=TypeScript, caption=Przykład chronionej trasy w NestJS]
+import { Module } from '@nestjs/common';
+import { AuthGuard } from './auth.guard';
+import { UsersController } from './users.controller';
+
+@Module({
+  controllers: [UsersController],
+  providers: [AuthGuard],
+})
+export class AppModule {}
+\end{lstlisting}
+
+\section{Łączenie się z Bazą Danych}
+NestJS wspiera wiele bibliotek ORM i ODM, takich jak TypeORM i Mongoose.
+
+\subsection{TypeORM}
+TypeORM to popularny ORM dla TypeScript i JavaScript. Aby połączyć się z bazą danych przy użyciu TypeORM, należy skonfigurować `TypeOrmModule` w module głównym.
+
+\subsubsection{Przykład Konfiguracji TypeORM}
+\begin{lstlisting}[language=TypeScript, caption=Konfiguracja TypeORM w NestJS]
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './user.entity';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: 'localhost',
+      port: 3306,
+      username: 'root',
+      password: 'password',
+      database: 'test',
+      entities: [User],
+      synchronize: true,
+    }),
+    TypeOrmModule.forFeature([User]),
+  ],
+  // inne konfiguracje
+})
+export class AppModule {}
+\end{lstlisting}
+
+\subsection{Mongoose}
+Mongoose to popularne ODM dla MongoDB. Aby połączyć się z MongoDB przy użyciu Mongoose, należy skonfigurować `MongooseModule` w module głównym.
+
+\subsubsection{Przykład Konfiguracji Mongoose}
+\begin{lstlisting}[language=TypeScript, caption=Konfiguracja Mongoose w NestJS]
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from './schemas/user.schema';
+
+@Module({
+  imports: [
+    MongooseModule.forRoot('mongodb://localhost/nest'),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+  ],
+  // inne konfiguracje
+})
+export class AppModule {}
+\end{lstlisting}
+
+\section{Inne Ważne Aspekty}
+\subsection{Konfiguracja Bazy Danych}
+NestJS obsługuje różne bazy danych przez TypeORM, Mongoose i inne ORM/ODM. Ważne jest, aby dobrze skonfigurować połączenie z bazą danych i zarządzać migracjami oraz schematami.
+
+\subsection{Wstrzykiwanie Zależności}
+NestJS używa Dependency Injection (DI) do zarządzania zależnościami, co ułatwia testowanie i modularność aplikacji. DI jest kluczowym elementem architektury NestJS i umożliwia tworzenie luźno powiązanych komponentów.
+
+\end{document}

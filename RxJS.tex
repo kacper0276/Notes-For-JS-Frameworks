@@ -1,0 +1,898 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor}
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Rozszerzona Dokumentacja Operatorów RxJS}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+RxJS (Reactive Extensions for JavaScript) to biblioteka umożliwiająca programowanie reaktywne. W tym przewodniku szczegółowo omówione są operatory RxJS, które umożliwiają tworzenie, transformowanie, filtrowanie i zarządzanie strumieniami danych.
+
+\section{Operatory do tworzenia Observable}
+\subsection{ajax}
+Tworzy \texttt{Observable} z odpowiedzi HTTP.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{ajax}]
+import { ajax } from 'rxjs/ajax';
+
+const observable = ajax('https://api.example.com/data');
+observable.subscribe(response => console.log(response));
+// Output: Response from API
+\end{lstlisting}
+
+\subsection{bindCallback}
+Tworzy \texttt{Observable} z funkcji opóźnionej (callback-based).
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{bindCallback}]
+import { bindCallback } from 'rxjs';
+
+const callbackFn = (value, cb) => cb(value);
+const observable = bindCallback(callbackFn)('Hello');
+observable.subscribe(response => console.log(response));
+// Output: Hello
+\end{lstlisting}
+
+\subsection{bindNodeCallback}
+Tworzy \texttt{Observable} z funkcji węzła (Node.js callback-based).
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{bindNodeCallback}]
+import { bindNodeCallback } from 'rxjs';
+import { readFile } from 'fs';
+
+const readFile$ = bindNodeCallback(readFile);
+const observable = readFile$('file.txt', 'utf8');
+observable.subscribe(content => console.log(content));
+// Output: Content of file.txt
+\end{lstlisting}
+
+\subsection{defer}
+Tworzy \texttt{Observable} dopiero wtedy, gdy jest subskrybowany.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{defer}]
+import { defer, of } from 'rxjs';
+
+const observable = defer(() => of(new Date()));
+observable.subscribe(date => console.log(date));
+// Output: Current date
+\end{lstlisting}
+
+\subsection{empty}
+Tworzy \texttt{Observable}, który natychmiast kończy się bez emitowania wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{empty}]
+import { empty } from 'rxjs';
+
+const observable = empty();
+observable.subscribe({
+  next(value) { console.log(value); },
+  complete() { console.log('Complete'); }
+// Output: Complete
+\end{lstlisting}
+
+\subsection{from}
+Tworzy \texttt{Observable} z obiektów iterowalnych.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{from}]
+import { from } from 'rxjs';
+
+const observable = from([10, 20, 30]);
+observable.subscribe(value => console.log(value));
+// Output: 10, 20, 30
+\end{lstlisting}
+
+\subsection{fromEvent}
+Tworzy \texttt{Observable} z wydarzeń DOM.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{fromEvent}]
+import { fromEvent } from 'rxjs';
+
+const observable = fromEvent(document, 'click');
+observable.subscribe(event => console.log('Clicked:', event));
+// Output: Click event details
+\end{lstlisting}
+
+\subsection{fromEventPattern}
+Tworzy \texttt{Observable} z funkcji, które dodają i usuwają nasłuchiwacze zdarzeń.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{fromEventPattern}]
+import { fromEventPattern } from 'rxjs';
+
+const observable = fromEventPattern(
+  handler => document.addEventListener('click', handler),
+  handler => document.removeEventListener('click', handler)
+);
+observable.subscribe(event => console.log('Clicked:', event));
+// Output: Click event details
+\end{lstlisting}
+
+\subsection{generate}
+Tworzy \texttt{Observable} na podstawie funkcji generującej wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{generate}]
+import { generate } from 'rxjs';
+
+const observable = generate(
+  0, // Initial state
+  x => x < 5, // Condition
+  x => x + 1 // Iteration function
+);
+observable.subscribe(value => console.log(value));
+// Output: 0, 1, 2, 3, 4
+\end{lstlisting}
+
+\subsection{interval}
+Tworzy \texttt{Observable}, który emituje wartości w równych odstępach czasu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{interval}]
+import { interval } from 'rxjs';
+
+const observable = interval(1000); // Emituje co 1 sekundę
+observable.subscribe(value => console.log(value));
+// Output: 0, 1, 2, 3, ...
+\end{lstlisting}
+
+\subsection{of}
+Tworzy \texttt{Observable} z wartości przekazanych jako argumenty.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{of}]
+import { of } from 'rxjs';
+
+const observable = of(1, 2, 3, 4, 5);
+observable.subscribe(value => console.log(value));
+// Output: 1, 2, 3, 4, 5
+\end{lstlisting}
+
+\subsection{range}
+Tworzy \texttt{Observable} emitujący wartości z określonego zakresu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{range}]
+import { range } from 'rxjs';
+
+const observable = range(1, 5); // Emituje wartości od 1 do 5
+observable.subscribe(value => console.log(value));
+// Output: 1, 2, 3, 4, 5
+\end{lstlisting}
+
+\subsection{throwError}
+Tworzy \texttt{Observable}, który natychmiast emituje błąd.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{throwError}]
+import { throwError } from 'rxjs';
+
+const observable = throwError(() => new Error('Something went wrong'));
+observable.subscribe({
+  next(value) { console.log(value); },
+  error(err) { console.error('Error: ', err); }
+});
+// Output: Error: Error: Something went wrong
+\end{lstlisting}
+
+\subsection{timer}
+Tworzy \texttt{Observable}, który emituje wartość po określonym czasie lub w regularnych odstępach.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{timer}]
+import { timer } from 'rxjs';
+
+const observable = timer(2000, 1000); // Pierwsza emisja po 2 sekundach, kolejne co 1 sekundę
+observable.subscribe(value => console.log(value));
+// Output: 0, 1, 2, 3, ...
+\end{lstlisting}
+
+\subsection{iif}
+Tworzy \texttt{Observable} na podstawie warunku.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{iif}]
+import { iif, of, throwError } from 'rxjs';
+
+const condition = true;
+const observable = iif(
+  () => condition,
+  of('Condition met'),
+  throwError(() => new Error('Condition not met'))
+);
+observable.subscribe({
+  next(value) { console.log(value); },
+  error(err) { console.error('Error: ', err); }
+});
+// Output: Condition met
+\end{lstlisting}
+
+\section{Operatory łączenia tworzące}
+\subsection{combineLatest}
+Łączy wartości z wielu \texttt{Observable} i emituje, gdy wszystkie źródła wyemitują co najmniej jedną wartość.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{combineLatest}]
+import { combineLatest, of } from 'rxjs';
+
+const observable1 = of('A', 'B');
+const observable2 = of(1, 2);
+
+combineLatest([observable1, observable2]).subscribe(values => console.log(values));
+// Output: ['B', 1], ['B', 2]
+\end{lstlisting}
+
+\subsection{concat}
+Łączy wiele \texttt{Observable} w kolejności, emitując wartości z jednego źródła, zanim przejdzie do następnego.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{concat}]
+import { concat, of } from 'rxjs';
+
+const observable1 = of(1, 2);
+const observable2 = of(3, 4);
+
+concat(observable1, observable2).subscribe(value => console.log(value));
+// Output: 1, 2, 3, 4
+\end{lstlisting}
+
+\subsection{forkJoin}
+Emitowanie ostatnich wartości z wielu źródeł, gdy wszystkie źródła zakończą emisję.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{forkJoin}]
+import { forkJoin, of } from 'rxjs';
+
+const observable1 = of('A', 'B');
+const observable2 = of(1, 2);
+
+forkJoin([observable1, observable2]).subscribe(values => console.log(values));
+// Output: [['B'], [2]]
+\end{lstlisting}
+
+\subsection{merge}
+Łączy wiele \texttt{Observable} i emituje wartości, gdy tylko jeden z nich emituje coś.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{merge}]
+import { merge, of } from 'rxjs';
+
+const observable1 = of(1, 2);
+const observable2 = of(3, 4);
+
+merge(observable1, observable2).subscribe(value => console.log(value));
+// Output: 1, 2, 3, 4
+\end{lstlisting}
+
+\subsection{partition}
+Dzieli \texttt{Observable} na dwie na podstawie predykatu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{partition}]
+import { partition, from } from 'rxjs';
+
+const [even$, odd$] = partition(from([1, 2, 3, 4, 5]), value => value % 2 === 0);
+
+even$.subscribe(value => console.log('Even:', value));
+// Output: Even: 2, 4
+
+odd$.subscribe(value => console.log('Odd:', value));
+// Output: Odd: 1, 3, 5
+\end{lstlisting}
+
+\subsection{race}
+Emitowanie wartości z \texttt{Observable}, który pierwszy wyemituje wartość.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{race}]
+import { race, interval, of } from 'rxjs';
+
+const observable1 = interval(1000);
+const observable2 = of('A', 'B', 'C');
+
+race(observable1, observable2).subscribe(value => console.log(value));
+// Output: 'A', 'B', 'C'
+\end{lstlisting}
+
+\subsection{zip}
+Łączy wartości z wielu \texttt{Observable} w pary.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{zip}]
+import { zip, of } from 'rxjs';
+
+const observable1 = of(1, 2, 3);
+const observable2 = of('A', 'B', 'C');
+
+zip(observable1, observable2).subscribe(values => console.log(values));
+// Output: [1, 'A'], [2, 'B'], [3, 'C']
+\end{lstlisting}
+
+\section{Operatory transformacji}
+\subsection{buffer}
+Zbiera wartości w buforze na podstawie innego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{buffer}]
+import { interval, buffer, timer } from 'rxjs';
+
+const observable = interval(500).pipe(
+  buffer(timer(2000))
+);
+observable.subscribe(values => console.log(values));
+// Output: [0, 1, 2, 3]
+\end{lstlisting}
+
+\subsection{bufferCount}
+Zbiera wartości w buforze, gdy osiągnie określoną liczbę wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{bufferCount}]
+import { interval, bufferCount } from 'rxjs';
+
+const observable = interval(500).pipe(
+  bufferCount(3)
+);
+observable.subscribe(values => console.log(values));
+// Output: [0, 1, 2], [3, 4, 5], ...
+\end{lstlisting}
+
+\subsection{bufferTime}
+Zbiera wartości w buforze na podstawie czasu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{bufferTime}]
+import { interval, bufferTime } from 'rxjs';
+
+const observable = interval(500).pipe(
+  bufferTime(2000)
+);
+observable.subscribe(values => console.log(values));
+// Output: [0, 1, 2], [3, 4, 5], ...
+\end{lstlisting}
+
+\subsection{bufferToggle}
+Zbiera wartości na podstawie otwierającego i zamykającego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{bufferToggle}]
+import { interval, bufferToggle, timer } from 'rxjs';
+
+const observable = interval(500).pipe(
+  bufferToggle(timer(2000), () => timer(2000))
+);
+observable.subscribe(values => console.log(values));
+// Output: [0, 1], [2, 3]
+\end{lstlisting}
+
+\subsection{bufferWhen}
+Zbiera wartości na podstawie emitowanych wartości innego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{bufferWhen}]
+import { interval, bufferWhen, timer } from 'rxjs';
+
+const observable = interval(500).pipe(
+  bufferWhen(() => timer(2000))
+);
+observable.subscribe(values => console.log(values));
+// Output: [0, 1], [2, 3], ...
+\end{lstlisting}
+
+\subsection{concatMap}
+Mapuje wartości na \texttt{Observable} i łączy je sekwencyjnie.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{concatMap}]
+import { from, concatMap, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  concatMap(value => of(value * 2))
+);
+observable.subscribe(value => console.log(value));
+// Output: 2, 4, 6
+\end{lstlisting}
+
+\subsection{concatMapTo}
+Mapuje wszystkie wartości na \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{concatMapTo}]
+import { from, concatMapTo, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  concatMapTo(of('A'))
+);
+observable.subscribe(value => console.log(value));
+// Output: 'A', 'A', 'A'
+\end{lstlisting}
+
+\subsection{exhaust}
+Emituje wartości tylko wtedy, gdy poprzednia emisja zakończyła się.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{exhaust}]
+import { interval, exhaust, take } from 'rxjs';
+
+const observable = interval(500).pipe(
+  exhaust(),
+  take(3)
+);
+observable.subscribe(value => console.log(value));
+// Output: 0, 1, 2
+\end{lstlisting}
+
+\subsection{exhaustMap}
+Mapuje wartości na \texttt{Observable} i ignoruje nowe wartości, gdy poprzedni \texttt{Observable} nie zakończył emisji.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{exhaustMap}]
+import { interval, exhaustMap, of } from 'rxjs';
+
+const observable = interval(500).pipe(
+  exhaustMap(value => of(value * 2))
+);
+observable.subscribe(value => console.log(value));
+// Output: 0, 2, 4, ...
+\end{lstlisting}
+
+\subsection{expand}
+Rekurencyjnie mapuje wartości na nowe \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{expand}]
+import { of, expand, take } from 'rxjs';
+
+const observable = of(1).pipe(
+  expand(value => of(value + 1)),
+  take(5)
+);
+observable.subscribe(value => console.log(value));
+// Output: 1, 2, 3, 4, 5
+\end{lstlisting}
+
+\subsection{groupBy}
+Grupuje wartości w \texttt{Observable} na podstawie klucza.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{groupBy}]
+import { from, groupBy, mergeMap, toArray } from 'rxjs';
+
+const observable = from([1, 2, 3, 4, 5]).pipe(
+  groupBy(value => value % 2),
+  mergeMap(group => group.pipe(toArray()))
+);
+observable.subscribe(values => console.log(values));
+// Output: [1, 3, 5], [2, 4]
+\end{lstlisting}
+
+\subsection{map}
+Mapuje wartości na nowe wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{map}]
+import { from, map } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  map(value => value * 2)
+);
+observable.subscribe(value => console.log(value));
+// Output: 2, 4, 6
+\end{lstlisting}
+
+\subsection{mapTo}
+Mapuje wszystkie wartości na tę samą wartość.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{mapTo}]
+import { from, mapTo } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  mapTo('A')
+);
+observable.subscribe(value => console.log(value));
+// Output: 'A', 'A', 'A'
+\end{lstlisting}
+
+\subsection{mergeMap}
+Mapuje wartości na \texttt{Observable} i łączy je równolegle.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{mergeMap}]
+import { from, mergeMap, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  mergeMap(value => of(value * 2))
+);
+observable.subscribe(value => console.log(value));
+// Output: 2, 4, 6
+\end{lstlisting}
+
+\subsection{mergeMapTo}
+Mapuje wszystkie wartości na \texttt{Observable} i łączy je równolegle.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{mergeMapTo}]
+import { from, mergeMapTo, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  mergeMapTo(of('A'))
+);
+observable.subscribe(value => console.log(value));
+// Output: 'A', 'A', 'A'
+\end{lstlisting}
+
+\subsection{mergeScan}
+Podobny do \texttt{scan}, ale łączy wartości równolegle.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{mergeScan}]
+import { from, mergeScan, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  mergeScan((acc, value) => of(acc + value), 0)
+);
+observable.subscribe(value => console.log(value));
+// Output: 1, 3, 6
+\end{lstlisting}
+
+\subsection{pairwise}
+Emitowanie par kolejnych wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{pairwise}]
+import { from, pairwise } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  pairwise()
+);
+observable.subscribe(values => console.log(values));
+// Output: [1, 2], [2, 3]
+\end{lstlisting}
+
+\subsection{pluck}
+Wydobywa wartości z obiektów na podstawie klucza.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{pluck}]
+import { from, pluck } from 'rxjs';
+
+const observable = from([{ a: 1 }, { a: 2 }, { a: 3 }]).pipe(
+  pluck('a')
+);
+observable.subscribe(value => console.log(value));
+// Output: 1, 2, 3
+\end{lstlisting}
+
+\subsection{scan}
+Akumuluje wartości na podstawie funkcji akumulatora.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{scan}]
+import { from, scan } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  scan((acc, value) => acc + value, 0)
+);
+observable.subscribe(value => console.log(value));
+// Output: 1, 3, 6
+\end{lstlisting}
+
+\subsection{switchScan}
+Podobny do \texttt{scan}, ale z zachowaniem wyłącznie najnowszego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{switchScan}]
+import { from, switchScan, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  switchScan((acc, value) => of(acc + value), 0)
+);
+observable.subscribe(value => console.log(value));
+// Output: 1, 3, 6
+\end{lstlisting}
+
+\subsection{switchMap}
+Mapuje wartości na \texttt{Observable} i subskrybuje najnowszy.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{switchMap}]
+import { from, switchMap, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  switchMap(value => of(value * 2))
+);
+observable.subscribe(value => console.log(value));
+// Output: 2, 4, 6
+\end{lstlisting}
+
+\subsection{switchMapTo}
+Mapuje wszystkie wartości na ten sam \texttt{Observable} i subskrybuje najnowszy.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{switchMapTo}]
+import { from, switchMapTo, of } from 'rxjs';
+
+const observable = from([1, 2, 3]).pipe(
+  switchMapTo(of('A'))
+);
+observable.subscribe(value => console.log(value));
+// Output: 'A', 'A', 'A'
+\end{lstlisting}
+
+\subsection{window}
+Zbiera wartości w oknach na podstawie innego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{window}]
+import { interval, window, timer } from 'rxjs';
+
+const observable = interval(500).pipe(
+  window(timer(2000))
+);
+observable.subscribe(windowed => windowed.subscribe(value => console.log(value)));
+// Output: 0, 1, 2, 3
+\end{lstlisting}
+
+\subsection{windowCount}
+Zbiera wartości w oknach na podstawie liczby wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{windowCount}]
+import { interval, windowCount } from 'rxjs';
+
+const observable = interval(500).pipe(
+  windowCount(3)
+);
+observable.subscribe(windowed => windowed.subscribe(value => console.log(value)));
+// Output: [0, 1, 2], [3, 4, 5], ...
+\end{lstlisting}
+
+\subsection{windowTime}
+Zbiera wartości w oknach na podstawie czasu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{windowTime}]
+import { interval, windowTime } from 'rxjs';
+
+const observable = interval(500).pipe(
+  windowTime(2000)
+);
+observable.subscribe(windowed => windowed.subscribe(value => console.log(value)));
+// Output: [0, 1], [2, 3], ...
+\end{lstlisting}
+
+\subsection{windowToggle}
+Zbiera wartości na podstawie otwierającego i zamykającego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{windowToggle}]
+import { interval, windowToggle, timer } from 'rxjs';
+
+const observable = interval(500).pipe(
+  windowToggle(timer(2000), () => timer(2000))
+);
+observable.subscribe(windowed => windowed.subscribe(value => console.log(value)));
+// Output: [0, 1], [2, 3]
+\end{lstlisting}
+
+\subsection{windowWhen}
+Zbiera wartości na podstawie emitowanych wartości innego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{windowWhen}]
+import { interval, windowWhen, timer } from 'rxjs';
+
+const observable = interval(500).pipe(
+  windowWhen(() => timer(2000))
+);
+observable.subscribe(windowed => windowed.subscribe(value => console.log(value)));
+// Output: [0, 1], [2, 3], ...
+\end{lstlisting}
+
+\section{Operatory podziału}
+\subsection{share}
+Udostępnia wspólną subskrypcję pomiędzy wieloma subskrybentami.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{share}]
+import { interval, share } from 'rxjs';
+
+const observable = interval(1000).pipe(
+  share()
+);
+observable.subscribe(value => console.log('Subscriber 1:', value));
+observable.subscribe(value => console.log('Subscriber 2:', value));
+// Output: Subscriber 1: 0, 1, 2, ... (same for Subscriber 2)
+\end{lstlisting}
+
+\subsection{shareReplay}
+Udostępnia wspólną subskrypcję i buforuje ostatnie wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{shareReplay}]
+import { interval, shareReplay } from 'rxjs';
+
+const observable = interval(1000).pipe(
+  shareReplay(1)
+);
+observable.subscribe(value => console.log('Subscriber 1:', value));
+setTimeout(() => {
+  observable.subscribe(value => console.log('Subscriber 2:', value));
+}, 2000);
+// Output: Subscriber 1: 0, 1, 2, ... (Subscriber 2 will start from the latest value)
+\end{lstlisting}
+
+\section{Operatory obsługi błędów}
+\subsection{catchError}
+Obsługuje błędy i zwraca nowe \texttt{Observable} w przypadku błędu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{catchError}]
+import { of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+const observable = throwError(() => new Error('Something went wrong')).pipe(
+  catchError(err => {
+    console.error('Caught error:', err);
+    return of('Recovered value');
+  })
+);
+observable.subscribe(value => console.log(value));
+// Output: Caught error: Error: Something went wrong
+// Output: Recovered value
+\end{lstlisting}
+
+\subsection{retry}
+Ponawia subskrypcję \texttt{Observable} w przypadku błędu.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{retry}]
+import { throwError } from 'rxjs';
+import { retry } from 'rxjs/operators';
+
+const observable = throwError(() => new Error('Failed')).pipe(
+  retry(2)
+);
+observable.subscribe({
+  error(err) { console.error('Retry failed:', err); }
+});
+// Output: Retry failed: Error: Failed
+\end{lstlisting}
+
+\subsection{retryWhen}
+Ponawia subskrypcję \texttt{Observable} na podstawie logiki dostarczonej przez inny \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{retryWhen}]
+import { throwError, timer } from 'rxjs';
+import { retryWhen, mergeMap } from 'rxjs/operators';
+
+const observable = throwError(() => new Error('Failed')).pipe(
+  retryWhen(errors => errors.pipe(
+    mergeMap((error, index) => {
+      if (index < 2) {
+        console.log('Retrying...');
+        return timer(1000);
+      }
+      return throwError(() => error);
+    })
+  ))
+);
+observable.subscribe({
+  error(err) { console.error('Retry failed:', err); }
+});
+// Output: Retrying... (after 1 second)
+// Output: Retrying... (after 1 second)
+// Output: Retry failed: Error: Failed
+\end{lstlisting}
+\section{Operatory narzędziowe}
+\subsection{tap}
+\texttt{tap} pozwala na wykonanie działania na wartościach przepływających przez strumień bez modyfikacji tych wartości.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{tap}]
+import { of, tap } from 'rxjs';
+
+const observable = of(1, 2, 3).pipe(
+  tap(value => console.log('Before map:', value)),
+  map(value => value * 2),
+  tap(value => console.log('After map:', value))
+);
+observable.subscribe(value => console.log('Final value:', value));
+// Output:
+// Before map: 1
+// After map: 2
+// Final value: 2
+// Before map: 2
+// After map: 4
+// Final value: 4
+// Before map: 3
+// After map: 6
+// Final value: 6
+\end{lstlisting}
+
+\subsection{delay}
+\texttt{delay} opóźnia emisję wartości o określony czas.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{delay}]
+import { of, delay } from 'rxjs';
+
+const observable = of('Hello').pipe(
+  delay(1000)
+);
+observable.subscribe(value => console.log(value));
+// Output (po 1 sekundzie): Hello
+\end{lstlisting}
+
+\subsection{delayWhen}
+\texttt{delayWhen} opóźnia emisję wartości na podstawie innego \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{delayWhen}]
+import { of, delayWhen, timer } from 'rxjs';
+
+const observable = of('Delayed value').pipe(
+  delayWhen(() => timer(2000))
+);
+observable.subscribe(value => console.log(value));
+// Output (po 2 sekundach): Delayed value
+\end{lstlisting}
+
+\subsection{timeout}
+\texttt{timeout} generuje błąd, jeśli nie nadejdzie żadna wartość w określonym czasie.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{timeout}]
+import { of, timeout } from 'rxjs';
+
+const observable = of('Hello').pipe(
+  delay(2000),
+  timeout(1000)
+);
+observable.subscribe({
+  next: value => console.log(value),
+  error: err => console.error('Error:', err.message)
+});
+// Output: Error: Timeout has occurred
+\end{lstlisting}
+
+\subsection{timeoutWith}
+\texttt{timeoutWith} pozwala na przełączenie się na inny \texttt{Observable}, jeśli nie nadejdzie żadna wartość w określonym czasie.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia \texttt{timeoutWith}]
+import { of, timeoutWith, timer } from 'rxjs';
+
+const observable = of('Hello').pipe(
+  delay(2000),
+  timeoutWith(1000, timer(0, 500))
+);
+observable.subscribe(value => console.log(value));
+// Output (co 500 ms): 0, 1, 2, ...
+\end{lstlisting}
+
+\section{Tworzenie własnych operatorów}
+Tworzenie własnych operatorów polega na utworzeniu funkcji, która przyjmuje \texttt{Observable} jako argument i zwraca nowy \texttt{Observable}.
+
+\begin{lstlisting}[language=JavaScript, caption=Przykład tworzenia własnego operatora]
+import { Observable } from 'rxjs';
+
+function myCustomOperator() {
+  return function(source) {
+    return new Observable(observer => {
+      return source.subscribe({
+        next(value) {
+          observer.next(value * 2);
+        },
+        error(err) {
+          observer.error(err);
+        },
+        complete() {
+          observer.complete();
+        }
+      });
+    });
+  };
+}
+
+const observable = of(1, 2, 3).pipe(myCustomOperator());
+observable.subscribe(value => console.log(value));
+// Output: 2, 4, 6
+\end{lstlisting}
+
+\section{Podsumowanie}
+RxJS dostarcza potężny zestaw narzędzi do pracy z asynchronicznymi strumieniami danych. Zrozumienie operatorów pozwala na tworzenie zaawansowanych logik przepływu danych w aplikacjach, umożliwiając bardziej efektywne i czytelne zarządzanie stanem oraz operacjami asynchronicznymi.
+
+\end{document}
+

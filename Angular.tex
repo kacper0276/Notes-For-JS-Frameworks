@@ -1,0 +1,310 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor}
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Zaawansowany Przewodnik po Angularze}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+Angular to platforma i framework do budowania złożonych aplikacji webowych. W tym dokumencie omówimy zaawansowane aspekty Angulara, takie jak Guardy, Interceptory, Serwisy, Moduły, Routing, oraz inne zaawansowane funkcje.
+
+\section{Struktura aplikacji Angular}
+Angular opiera się na modularnej architekturze, co pozwala na łatwe zarządzanie złożonymi aplikacjami poprzez podział na moduły.
+
+\subsection{Moduły}
+Moduły w Angularze to zbiory komponentów, serwisów, dyrektyw i innych zasobów, które są grupowane razem w celu ułatwienia zarządzania i organizacji kodu.
+
+\begin{lstlisting}[language=TypeScript, caption=Definicja modułu w Angularze]
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
+import { SharedModule } from './shared/shared.module';
+
+@NgModule({
+  declarations: [
+    AppComponent
+  ],
+  imports: [
+    BrowserModule,
+    SharedModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+\end{lstlisting}
+
+\section{Komponenty}
+Komponenty są podstawowymi elementami aplikacji Angular, które odpowiadają za interfejs użytkownika.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykładowy komponent]
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-hello-world',
+  template: '<h1>Hello, World!</h1>',
+  styleUrls: ['./hello-world.component.css']
+})
+export class HelloWorldComponent { }
+\end{lstlisting}
+
+\section{Serwisy}
+Serwisy w Angularze to klasy, które zawierają logikę biznesową i są wstrzykiwane do komponentów lub innych serwisów za pomocą mechanizmu Dependency Injection.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykładowy serwis w Angularze]
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class DataService {
+  private data: string[] = [];
+
+  addData(item: string) {
+    this.data.push(item);
+  }
+
+  getData(): string[] {
+    return this.data;
+  }
+}
+\end{lstlisting}
+
+\section{Routing}
+Routing w Angularze umożliwia nawigację między różnymi widokami aplikacji. Angular Router to elastyczne narzędzie pozwalające na definiowanie tras, ochronę tras za pomocą Guardów oraz ładowanie modułów na żądanie (lazy loading).
+
+\subsection{Definiowanie tras}
+Trasy definiuje się w pliku modułu routingowego, gdzie każda trasa jest przypisana do określonego komponentu.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykład konfiguracji tras]
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { HomeComponent } from './home/home.component';
+import { AboutComponent } from './about/about.component';
+
+const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'about', component: AboutComponent },
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+\end{lstlisting}
+
+\subsection{Lazy Loading}
+Lazy Loading pozwala na ładowanie modułów dopiero wtedy, gdy są one potrzebne, co znacząco poprawia wydajność aplikacji.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykład Lazy Loading w Angularze]
+const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { 
+    path: 'admin', 
+    loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule) 
+  },
+];
+\end{lstlisting}
+
+\section{Guardy}
+Guardy w Angularze pozwalają na kontrolowanie dostępu do określonych tras na podstawie warunków logicznych. Angular oferuje kilka typów Guardów:
+
+\begin{itemize}
+    \item \texttt{CanActivate} – sprawdza, czy użytkownik może przejść do określonej trasy.
+    \item \texttt{CanDeactivate} – sprawdza, czy użytkownik może opuścić określoną trasę.
+    \item \texttt{CanLoad} – sprawdza, czy moduł może być załadowany na żądanie.
+\end{itemize}
+
+\subsection{Implementacja CanActivate}
+\begin{lstlisting}[language=TypeScript, caption=Przykład implementacji \texttt{CanActivate}]
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
+import { AuthService } from './auth.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthGuard implements CanActivate {
+
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(): boolean {
+    if (this.authService.isAuthenticated()) {
+      return true;
+    } else {
+      this.router.navigate(['/login']);
+      return false;
+    }
+  }
+}
+\end{lstlisting}
+
+\section{Interceptory}
+Interceptory w Angularze są częścią mechanizmu HTTP Client i umożliwiają przechwytywanie oraz modyfikację żądań i odpowiedzi HTTP.
+
+\subsection{Tworzenie Interceptora}
+\begin{lstlisting}[language=TypeScript, caption=Przykład implementacji Interceptora]
+import { Injectable } from '@angular/core';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const authToken = 'my-auth-token';
+    const authReq = req.clone({
+      setHeaders: { Authorization: `Bearer ${authToken}` }
+    });
+    return next.handle(authReq);
+  }
+}
+\end{lstlisting}
+
+\subsection{Rejestrowanie Interceptora}
+Aby zarejestrować Interceptor, należy dodać go do tablicy \texttt{providers} w module aplikacji.
+
+\begin{lstlisting}[language=TypeScript, caption=Rejestracja Interceptora]
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './auth.interceptor';
+
+@NgModule({
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+  ],
+})
+export class AppModule { }
+\end{lstlisting}
+
+\section{Formularze}
+Angular oferuje dwa podejścia do tworzenia formularzy: Template-Driven i Reactive Forms. Reactive Forms dają większą kontrolę nad walidacją i stanem formularza.
+
+\subsection{Reactive Forms}
+Reactive Forms pozwalają na bardziej dynamiczne zarządzanie formularzami poprzez zdefiniowanie formy w TypeScript zamiast HTML.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykład Reactive Form]
+import { Component } from '@angular/core';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-registration',
+  templateUrl: './registration.component.html'
+})
+export class RegistrationComponent {
+  registrationForm = new FormGroup({
+    username: new FormControl('', Validators.required),
+    email: new FormControl('', [Validators.required, Validators.email]),
+    password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+  });
+
+  onSubmit() {
+    console.log(this.registrationForm.value);
+  }
+}
+\end{lstlisting}
+
+\section{HttpClient}
+\texttt{HttpClient} w Angularze jest narzędziem do komunikacji z serwerami za pomocą żądań HTTP. Umożliwia obsługę różnych metod HTTP, takich jak \texttt{GET}, \texttt{POST}, \texttt{PUT}, \texttt{DELETE}.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykład użycia HttpClient w Angularze]
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+
+  constructor(private http: HttpClient) { }
+
+  getData(): Observable<any> {
+    return this.http.get('https://api.example.com/data');
+  }
+
+  postData(data: any): Observable<any> {
+    return this.http.post('https://api.example.com/data', data);
+  }
+}
+\end{lstlisting}
+
+\section{Middleware w Angularze}
+Middleware w Angularze może być zaimplementowany jako Interceptor lub jako mechanizm Guard. Oba podejścia pozwalają na przechwytywanie i manipulowanie żądaniami HTTP lub nawigacją.
+
+\section{JWT (JSON Web Token)}
+JWT jest standardem używanym do bezpiecznego przekazywania informacji między serwerem a klientem. W Angularze JWT można łatwo zintegrować z aplikacją przy użyciu Interceptorów do automatycznego dołączania tokenów do nagłówków żądań.
+
+\subsection{Implementacja JWT w Angularze}
+Aby zintegrować JWT w Angularze, należy stworzyć serwis do obsługi tokenów oraz Interceptor do automatycznego dołączania tokenu do żądań HTTP.
+
+\begin{lstlisting}[language=TypeScript, caption=Przykład serwisu do obsługi JWT]
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class JwtService {
+  private readonly TOKEN_KEY = 'auth-token';
+
+  saveToken(token: string) {
+    localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  clearToken() {
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
+}
+\end{lstlisting}
+
+\section{Podsumowanie}
+Angular jest potężnym narzędziem do tworzenia złożonych aplikacji webowych. Dzięki zaawansowanym funkcjom takim jak Guardy, Interceptory, Lazy Loading, oraz rozbudowanemu systemowi modułów, Angular umożliwia tworzenie skalowalnych i dobrze zorganizowanych aplikacji. Dokument ten przedstawia kluczowe aspekty Angulara, które są niezbędne dla każdego dewelopera pragnącego tworzyć nowoczesne i zaawansowane aplikacje.
+
+\end{document}

@@ -1,0 +1,251 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{pagecolor}
+
+% Ustawienia ciemnego motywu
+\definecolor{darkbackground}{HTML}{2E3440}
+\definecolor{lighttext}{HTML}{D8DEE9}
+\definecolor{keywordcolor}{HTML}{81A1C1}
+\definecolor{stringcolor}{HTML}{A3BE8C}
+\definecolor{commentcolor}{HTML}{616E88}
+\definecolor{numbercolor}{HTML}{B48EAD}
+\definecolor{functioncolor}{HTML}{88C0D0}
+
+\pagecolor{darkbackground}
+\color{lighttext}
+\geometry{margin=1in}
+
+% Ustawienia kolorowania składni kodu
+\lstset{
+  backgroundcolor=\color{darkbackground},
+  basicstyle=\ttfamily\color{lighttext},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  commentstyle=\color{commentcolor}\textit,
+  numberstyle=\tiny\color{numbercolor},
+  identifierstyle=\color{functioncolor},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lighttext},
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b,
+}
+
+\title{Zaawansowany Przewodnik po Node.js}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Node.js}
+Node.js to środowisko uruchomieniowe JavaScript, które umożliwia uruchamianie kodu JavaScript na serwerze. Oferuje wiele funkcji i bibliotek do budowy aplikacji serwerowych.
+
+\section{Kontrolery}
+W Node.js, kontrolery to zazwyczaj funkcje lub klasy, które obsługują różne trasy w aplikacji. W Express.js, można je zdefiniować jako middleware.
+
+\subsection{Przykład Kontrolera w Express.js}
+\begin{lstlisting}[language=JavaScript, caption=Przykład kontrolera w Express.js]
+const express = require('express');
+const router = express.Router();
+
+router.get('/users/:id', (req, res) => {
+  // Kod do pobrania użytkownika
+  res.send(`User with ID: ${req.params.id}`);
+});
+
+router.post('/users', (req, res) => {
+  // Kod do tworzenia użytkownika
+  res.send('User created');
+});
+
+module.exports = router;
+\end{lstlisting}
+
+\section{Serwisy}
+Serwisy w Node.js są klasami lub funkcjami odpowiedzialnymi za logikę biznesową aplikacji. Zwykle są używane do komunikacji z bazą danych lub innymi zewnętrznymi źródłami danych.
+
+\subsection{Przykład Serwisu}
+\begin{lstlisting}[language=JavaScript, caption=Przykład serwisu w Node.js]
+class UserService {
+  constructor(userModel) {
+    this.userModel = userModel;
+  }
+
+  async getUser(id) {
+    return this.userModel.findById(id);
+  }
+
+  async createUser(userData) {
+    return this.userModel.create(userData);
+  }
+}
+
+module.exports = UserService;
+\end{lstlisting}
+
+\section{Repozytoria}
+Repozytoria w Node.js służą do zarządzania interakcją z bazą danych i często są tworzone przy użyciu ORM, takich jak Sequelize lub Mongoose.
+
+\subsection{Przykład Repozytorium z Sequelize}
+\begin{lstlisting}[language=JavaScript, caption=Przykład repozytorium z Sequelize]
+const { Model, DataTypes } = require('sequelize');
+const sequelize = require('./database'); // Konfiguracja bazy danych
+
+class User extends Model {}
+
+User.init({
+  username: DataTypes.STRING,
+  password: DataTypes.STRING,
+}, {
+  sequelize,
+  modelName: 'User',
+});
+
+module.exports = User;
+\end{lstlisting}
+
+\section{JWT (JSON Web Token)}
+JWT jest używany w Node.js do autoryzacji i uwierzytelniania. Używa się bibliotek takich jak `jsonwebtoken` do generowania i weryfikowania tokenów.
+
+\subsection{Przykład Generowania i Weryfikowania Tokenu}
+\begin{lstlisting}[language=JavaScript, caption=Przykład użycia JWT w Node.js]
+const jwt = require('jsonwebtoken');
+
+function generateToken(payload) {
+  return jwt.sign(payload, 'your-secret-key', { expiresIn: '1h' });
+}
+
+function verifyToken(token) {
+  return jwt.verify(token, 'your-secret-key');
+}
+
+module.exports = { generateToken, verifyToken };
+\end{lstlisting}
+
+\section{Hashowanie Haseł}
+Do hashowania haseł w Node.js można użyć biblioteki `bcrypt`.
+
+\subsection{Przykład Hashowania Haseł}
+\begin{lstlisting}[language=JavaScript, caption=Przykład hashowania haseł przy użyciu bcrypt]
+const bcrypt = require('bcrypt');
+
+async function hashPassword(password) {
+  const salt = await bcrypt.genSalt();
+  return bcrypt.hash(password, salt);
+}
+
+async function comparePassword(password, hash) {
+  return bcrypt.compare(password, hash);
+}
+
+module.exports = { hashPassword, comparePassword };
+\end{lstlisting}
+
+\section{Middleware}
+Middleware w Node.js to funkcje, które mogą modyfikować żądania i odpowiedzi lub przeprowadzać dodatkowe operacje przed dotarciem do końcowego kontrolera.
+
+\subsection{Przykład Middleware}
+\begin{lstlisting}[language=JavaScript, caption=Przykład middleware w Node.js]
+function loggerMiddleware(req, res, next) {
+  console.log(`Request made to: ${req.url}`);
+  next();
+}
+
+module.exports = loggerMiddleware;
+\end{lstlisting}
+
+\section{Guardy}
+W Node.js, implementacja zabezpieczeń jest często realizowana za pomocą middleware. Middleware działa podobnie do guardów w innych frameworkach.
+
+\subsection{Przykład Guardu (Middleware) w Node.js}
+\begin{lstlisting}[language=JavaScript, caption=Przykład guardu w Node.js]
+function authGuard(req, res, next) {
+  const token = req.headers['authorization'];
+  if (token === 'valid-token') {
+    next();
+  } else {
+    res.status(403).send('Forbidden');
+  }
+}
+
+module.exports = authGuard;
+\end{lstlisting}
+
+\section{Interceptory}
+W Node.js, podobne funkcje można zrealizować poprzez middleware, które modyfikuje żądania lub odpowiedzi.
+
+\subsection{Przykład Interceptora (Middleware) w Node.js}
+\begin{lstlisting}[language=JavaScript, caption=Przykład interceptora w Node.js]
+function responseInterceptor(req, res, next) {
+  console.log('Before handling request');
+  res.on('finish', () => {
+    console.log('After handling request');
+  });
+  next();
+}
+
+module.exports = responseInterceptor;
+\end{lstlisting}
+
+\section{Protected Routes}
+Protected routes w Node.js są zabezpieczane za pomocą middleware, które sprawdza autoryzację przed dostępem do chronionych zasobów.
+
+\subsection{Przykład Chronionej Trasy}
+\begin{lstlisting}[language=JavaScript, caption=Przykład chronionej trasy w Node.js]
+const express = require('express');
+const app = express();
+const authGuard = require('./authGuard');
+
+app.use('/protected', authGuard, (req, res) => {
+  res.send('This is a protected route');
+});
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+\end{lstlisting}
+
+\section{Łączenie się z Bazą Danych}
+Node.js obsługuje różne biblioteki ORM/ODM do komunikacji z bazą danych. Poniżej przedstawiam konfigurację dla dwóch popularnych bibliotek: Sequelize (dla SQL) oraz Mongoose (dla MongoDB).
+
+\subsection{Sequelize}
+Sequelize to popularny ORM dla Node.js, który obsługuje różne bazy danych SQL, takie jak MySQL, PostgreSQL, SQLite.
+
+\subsubsection{Przykład Konfiguracji Sequelize}
+\begin{lstlisting}[language=JavaScript, caption=Konfiguracja Sequelize w Node.js]
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize('database', 'username', 'password', {
+  host: 'localhost',
+  dialect: 'mysql', // lub 'postgres', 'sqlite', 'mssql'
+});
+
+module.exports = sequelize;
+\end{lstlisting}
+
+\subsection{Mongoose}
+Mongoose to popularne ODM dla MongoDB. Pozwala na łatwe połączenie z bazą danych MongoDB i zarządzanie schematami danych.
+
+\subsubsection{Przykład Konfiguracji Mongoose}
+\begin{lstlisting}[language=JavaScript, caption=Konfiguracja Mongoose w Node.js]
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost/nest', { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Failed to connect to MongoDB', err));
+
+module.exports = mongoose;
+\end{lstlisting}
+
+\end{document}
