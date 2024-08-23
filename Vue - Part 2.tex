@@ -1,0 +1,868 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Notatki z Vue.js: Stan Globalny, Routing, Binding i Inne Funkcje}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie do Vue.js}
+Vue.js to jeden z najpopularniejszych frameworków JavaScript używanych do budowania nowoczesnych aplikacji webowych. Jego prostota, wydajność oraz modularność sprawiają, że jest wybierany zarówno przez początkujących, jak i zaawansowanych deweloperów.
+
+\section{Zarządzanie Stanem Globalnym z Pinia}
+Pinia to oficjalny menedżer stanu dla Vue.js, który jest bardziej nowoczesnym i uproszczonym narzędziem w porównaniu do Vuex.
+
+\subsection{Instalacja Pinia}
+Aby zainstalować Pinia w projekcie Vue.js, należy użyć następującej komendy:
+\begin{verbatim}
+npm install pinia
+\end{verbatim}
+
+\subsection{Konfiguracja Pinia}
+Aby rozpocząć korzystanie z Pinia, należy dodać ją do aplikacji:
+\begin{lstlisting}[language=JavaScript]
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
+
+const app = createApp(App)
+app.use(createPinia())
+app.mount('#app')
+\end{lstlisting}
+
+\subsection{Tworzenie Store'u w Pinia}
+Store w Pinia jest miejscem, gdzie można przechowywać globalny stan aplikacji.
+\begin{lstlisting}[language=JavaScript]
+import { defineStore } from 'pinia';
+
+export const useMainStore = defineStore('main', {
+    state: () => ({
+        counter: 0,
+        user: null
+    }),
+    actions: {
+        increment() {
+            this.counter++;
+        },
+        setUser(user) {
+            this.user = user;
+        }
+    },
+    getters: {
+        doubleCounter(state) {
+            return state.counter * 2;
+        }
+    }
+});
+\end{lstlisting}
+
+\subsection{Użycie Store'u w Komponentach}
+\begin{lstlisting}[language=JavaScript]
+import { useMainStore } from './store/main';
+
+export default {
+  setup() {
+    const mainStore = useMainStore();
+
+    function incrementCounter() {
+        mainStore.increment();
+    }
+
+    return { mainStore, incrementCounter };
+  }
+}
+\end{lstlisting}
+
+\section{Routing z Vue Router}
+Vue Router to oficjalna biblioteka do zarządzania routingiem w aplikacjach Vue.js.
+
+\subsection{Instalacja Vue Router}
+\begin{verbatim}
+npm install vue-router
+\end{verbatim}
+
+\subsection{Konfiguracja Routera}
+Po zainstalowaniu, należy skonfigurować router:
+\begin{lstlisting}[language=JavaScript]
+import { createRouter, createWebHistory } from 'vue-router';
+import Home from './views/Home.vue';
+import About from './views/About.vue';
+
+const routes = [
+  { path: '/', component: Home },
+  { path: '/about', component: About }
+];
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
+
+export default router;
+\end{lstlisting}
+
+\subsection{Użycie Routera w Aplikacji}
+Następnie router musi zostać dodany do instancji Vue:
+\begin{lstlisting}[language=JavaScript]
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+
+createApp(App)
+  .use(router)
+  .mount('#app');
+\end{lstlisting}
+
+\subsection{Dynamiczne Trasy}
+Vue Router pozwala na definiowanie tras dynamicznych z wykorzystaniem parametrów:
+\begin{lstlisting}[language=JavaScript]
+const routes = [
+  { path: '/user/:id', component: User }
+];
+\end{lstlisting}
+W komponencie, możemy odczytać parametry trasy:
+\begin{lstlisting}[language=JavaScript]
+import { useRoute } from 'vue-router';
+
+export default {
+  setup() {
+    const route = useRoute();
+    const userId = route.params.id;
+
+    return { userId };
+  }
+}
+\end{lstlisting}
+
+\section{Binding Danych w Vue.js}
+Binding danych to jedna z kluczowych funkcji Vue.js, umożliwiająca łatwe powiązanie danych w aplikacji z widokiem.
+
+\subsection{Dwukierunkowe Wiązanie Danych (v-model)}
+\begin{lstlisting}[language=HTML]
+<input v-model="message" placeholder="Wpisz wiadomość">
+<p>Wiadomość: {{ message }}</p>
+\end{lstlisting}
+Dzięki temu, każde wpisanie tekstu do pola input automatycznie aktualizuje wartość `message`.
+
+\subsection{Binding Atrybutów}
+W Vue możemy dynamicznie wiązać atrybuty HTML z danymi w komponencie:
+\begin{lstlisting}[language=HTML]
+<img :src="imageSrc" :alt="imageDescription">
+\end{lstlisting}
+
+\subsection{Binding Klas i Stylów}
+Możemy dynamicznie przypisywać klasy i style do elementów:
+\begin{lstlisting}[language=HTML]
+<div :class="{ active: isActive, 'text-bold': isBold }"></div>
+<div :style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
+\end{lstlisting}
+
+\section{Reactive i Ref}
+\subsection{Reactive}
+Funkcja `reactive` tworzy reaktywny obiekt, co oznacza, że każda zmiana w obiekcie automatycznie aktualizuje widok:
+\begin{lstlisting}[language=JavaScript]
+import { reactive } from 'vue';
+
+export default {
+  setup() {
+    const state = reactive({
+      count: 0,
+      user: { name: 'John Doe' }
+    });
+
+    function increment() {
+      state.count++;
+    }
+
+    return { state, increment };
+  }
+}
+\end{lstlisting}
+
+\subsection{Ref}
+Funkcja `ref` tworzy reaktywną referencję, która może przechowywać wartości prymitywne lub obiekty:
+\begin{lstlisting}[language=JavaScript]
+import { ref } from 'vue';
+
+export default {
+  setup() {
+    const count = ref(0);
+
+    function increment() {
+      count.value++;
+    }
+
+    return { count, increment };
+  }
+}
+\end{lstlisting}
+
+\section{Odczytywanie Danych z Parametrów URL}
+\subsection{Parametry Dynamiczne w URL}
+W Vue Router można odczytywać parametry dynamiczne z URL:
+\begin{lstlisting}[language=JavaScript]
+const routes = [
+  { path: '/profile/:id', component: Profile }
+];
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript]
+import { useRoute } from 'vue-router';
+
+export default {
+  setup() {
+    const route = useRoute();
+    const profileId = route.params.id;
+
+    return { profileId };
+  }
+}
+\end{lstlisting}
+
+\section{Przekazywanie Parametrów między Komponentami}
+
+\subsection{Przekazywanie Parametrów z Rodzica do Dziecka}
+Komponenty mogą przekazywać dane do swoich komponentów potomnych za pomocą atrybutów props.
+
+\begin{lstlisting}[language=JavaScript]
+export default {
+  props: {
+    message: String,
+    count: Number,
+    user: Object
+  }
+}
+\end{lstlisting}
+
+Użycie komponentu dziecka w komponencie rodzica:
+
+\begin{lstlisting}[language=HTML]
+<ChildComponent :message="parentMessage" :count="parentCount" :user="parentUser"></ChildComponent>
+\end{lstlisting}
+
+\subsection{Przekazywanie Parametrów z Dziecka do Rodzica}
+Aby komponent dziecka mógł przekazać dane z powrotem do rodzica, można użyć emitowania zdarzeń:
+
+\begin{lstlisting}[language=JavaScript]
+export default {
+  setup(props, { emit }) {
+    function sendMessageToParent() {
+      emit('messageFromChild', 'Hello from Child');
+    }
+
+    return { sendMessageToParent };
+  }
+}
+\end{lstlisting}
+
+W komponencie rodzica:
+
+\begin{lstlisting}[language=HTML]
+<ChildComponent @messageFromChild="handleMessage"></ChildComponent>
+\end{lstlisting}
+
+I metoda `handleMessage` w komponencie rodzica:
+
+\begin{lstlisting}[language=JavaScript]
+export default {
+  setup() {
+    function handleMessage(message) {
+      console.log('Received from child:', message);
+    }
+
+    return { handleMessage };
+  }
+}
+\end{lstlisting}
+
+\section{Przekazywanie Danych z Dziecka do Rodzica za pomocą \texttt{v-model}}
+
+\subsection{Przekazywanie Danych z Dziecka do Rodzica za pomocą \texttt{v-model} i \texttt{@update:value} (Tradycyjny Sposób)}
+
+\subsubsection{Komponent Dziecka}
+Najpierw tworzymy komponent dziecka, który będzie emitował wartość do rodzica za pomocą \texttt{v-model}.
+
+\begin{lstlisting}[language=JavaScript]
+<template>
+  <input :value="modelValue" @input="updateValue">
+</template>
+
+<script>
+export default {
+  props: {
+    modelValue: String
+  },
+  methods: {
+    updateValue(event) {
+      this.$emit('update:modelValue', event.target.value);
+    }
+  }
+};
+</script>
+\end{lstlisting}
+
+W powyższym kodzie:
+\begin{itemize}
+  \item \texttt{props} zawiera \texttt{modelValue}, co jest standardowym schematem dla \texttt{v-model}.
+  \item \texttt{updateValue} to metoda, która emituje zaktualizowaną wartość do rodzica.
+\end{itemize}
+
+\subsubsection{Komponent Rodzica}
+Teraz zdefiniujemy komponent rodzica, który będzie używał komponentu dziecka z \texttt{v-model}.
+
+\begin{lstlisting}[language=JavaScript]
+<template>
+  <div>
+    <ChildComponent v-model="parentMessage" />
+    <p>Message from child: {{ parentMessage }}</p>
+  </div>
+</template>
+
+<script>
+import ChildComponent from './ChildComponent.vue';
+
+export default {
+  components: {
+    ChildComponent
+  },
+  data() {
+    return {
+      parentMessage: ''
+    };
+  }
+};
+</script>
+\end{lstlisting}
+
+W tym przykładzie:
+\begin{itemize}
+  \item \texttt{v-model} w rodzicu automatycznie zarządza danymi \texttt{parentMessage}, synchronizując je z wartością z komponentu dziecka.
+\end{itemize}
+
+\subsection{Przekazywanie Danych z Dziecka do Rodzica za pomocą \texttt{v-model} i \texttt{@update:value} z \texttt{<script setup>}}
+
+\subsubsection{Komponent Dziecka}
+Przy użyciu \texttt{<script setup>}, możemy uprościć kod i nadal emitować dane z dziecka do rodzica.
+
+\begin{lstlisting}[language=JavaScript]
+<template>
+  <input :value="modelValue" @input="updateValue">
+</template>
+
+<script setup>
+import { defineProps, defineEmits } from 'vue';
+
+const props = defineProps({
+  modelValue: String
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+function updateValue(event) {
+  emit('update:modelValue', event.target.value);
+}
+</script>
+\end{lstlisting}
+
+Tutaj:
+\begin{itemize}
+  \item \texttt{defineProps} definiuje \texttt{modelValue} jako wartość przekazywaną z rodzica.
+  \item \texttt{defineEmits} definiuje zdarzenie \texttt{update:modelValue}, które jest emitowane, gdy wartość się zmienia.
+\end{itemize}
+
+\subsubsection{Komponent Rodzica}
+Komponent rodzica przy użyciu \texttt{<script setup>}:
+
+\begin{lstlisting}[language=JavaScript]
+<template>
+  <div>
+    <ChildComponent v-model="parentMessage" />
+    <p>Message from child: {{ parentMessage }}</p>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import ChildComponent from './ChildComponent.vue';
+
+const parentMessage = ref('');
+</script>
+\end{lstlisting}
+
+W tym przypadku:
+\begin{itemize}
+  \item \texttt{ref} jest używany do zdefiniowania reaktywnej zmiennej \texttt{parentMessage}, która będzie aktualizowana przez dziecko.
+\end{itemize}
+
+
+\section{Composables i Serwisy}
+
+\subsection{Composables}
+Composables to funkcje, które można użyć w wielu komponentach w celu zredukowania powtarzalności kodu. Są to funkcje, które korzystają z reaktywności i innych funkcji Vue.
+
+Przykład prostego composable:
+
+\begin{lstlisting}[language=JavaScript]
+import { ref } from 'vue';
+
+export function useCounter() {
+  const count = ref(0);
+
+  function increment() {
+    count.value++;
+  }
+
+  return { count, increment };
+}
+\end{lstlisting}
+
+Użycie composable w komponencie:
+
+\begin{lstlisting}[language=JavaScript]
+import { useCounter } from './composables/useCounter';
+
+export default {
+  setup() {
+    const { count, increment } = useCounter();
+
+    return { count, increment };
+  }
+}
+\end{lstlisting}
+
+\subsection{Serwisy}
+Serwisy w Vue.js to pliki, które przechowują logikę związaną z interakcjami z zewnętrznymi API. Zazwyczaj wykorzystują `axios` lub inną bibliotekę do wykonywania żądań HTTP.
+
+Przykład serwisu:
+
+\begin{lstlisting}[language=JavaScript]
+import axios from 'axios';
+
+export function fetchUser(userId) {
+  return axios.get(`/api/users/${userId}`);
+}
+\end{lstlisting}
+
+Użycie serwisu w komponencie:
+
+\begin{lstlisting}[language=JavaScript]
+import { fetchUser } from './services/userService';
+
+export default {
+  setup() {
+    const userId = ref(1);
+    const user = ref(null);
+
+    async function loadUser() {
+      const response = await fetchUser(userId.value);
+      user.value = response.data;
+    }
+
+    loadUser();
+
+    return { user };
+  }
+}
+\end{lstlisting}
+
+\section{Obsługa Formularzy i Walidacja}
+Formularze są integralną częścią większości aplikacji webowych. Vue.js ułatwia tworzenie i zarządzanie formularzami, a także walidację danych.
+
+\subsection{Tworzenie Formularzy}
+Formularze w Vue.js mogą być zarządzane za pomocą \texttt{v-model}, co ułatwia powiązanie pól formularza z danymi komponentu.
+
+\begin{lstlisting}[language=HTML]
+<template>
+  <form @submit.prevent="submitForm">
+    <input v-model="formData.name" placeholder="Imię" />
+    <input v-model="formData.email" placeholder="Email" />
+    <button type="submit">Submit</button>
+  </form>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      formData: {
+        name: '',
+        email: ''
+      }
+    };
+  },
+  methods: {
+    submitForm() {
+      console.log(this.formData);
+    }
+  }
+};
+</script>
+\end{lstlisting}
+
+\subsection{Walidacja Formularzy}
+Do walidacji formularzy możemy użyć zewnętrznych bibliotek, takich jak \texttt{Vuelidate} lub \texttt{formkit}, lub zaimplementować własne rozwiązania.
+
+\begin{lstlisting}[language=JavaScript]
+import useVuelidate from '@vuelidate/core';
+import { required, email } from '@vuelidate/validators';
+
+export default {
+  setup() {
+    const formData = reactive({
+      name: '',
+      email: ''
+    });
+
+    const rules = {
+      name: { required },
+      email: { required, email }
+    };
+
+    const v$ = useVuelidate(rules, formData);
+
+    return { formData, v$ };
+  }
+};
+\end{lstlisting}
+
+\section{Obsługa Zdarzeń Globalnych}
+Vue.js pozwala na obsługę zdarzeń globalnych, które mogą być emitowane i nasłuchiwane w różnych komponentach.
+
+\subsection{Emitowanie i Nasłuchiwanie Zdarzeń}
+Możemy użyć wbudowanych metod \texttt{\$emit} i \texttt{\$on}, aby zarządzać zdarzeniami globalnymi.
+
+\begin{lstlisting}[language=JavaScript]
+export default {
+  methods: {
+    emitEvent() {
+      this.$emit('my-event', 'dane');
+    }
+  },
+  created() {
+    this.$on('my-event', (data) => {
+      console.log('Zdarzenie odebrane:', data);
+    });
+  }
+};
+\end{lstlisting}
+
+\subsection{Globalny Bus Zdarzeń}
+Możemy również stworzyć globalny bus zdarzeń:
+
+\begin{lstlisting}[language=JavaScript]
+const EventBus = new Vue();
+
+export default EventBus;
+\end{lstlisting}
+
+Następnie, w komponentach:
+
+\begin{lstlisting}[language=JavaScript]
+import EventBus from './EventBus';
+
+export default {
+  methods: {
+    emitEvent() {
+      EventBus.$emit('my-event', 'dane');
+    }
+  },
+  created() {
+    EventBus.$on('my-event', (data) => {
+      console.log('Zdarzenie odebrane:', data);
+    });
+  }
+};
+\end{lstlisting}
+
+\section{Lazy Loading Komponentów}
+Lazy loading to technika ładowania komponentów na żądanie, co pozwala na optymalizację wydajności aplikacji.
+
+\subsection{Dynamiczny Import}
+Możemy użyć \texttt{import()} do dynamicznego ładowania komponentów:
+
+\begin{lstlisting}[language=JavaScript]
+const MyComponent = () => import('./MyComponent.vue');
+
+export default {
+  components: {
+    MyComponent
+  }
+};
+\end{lstlisting}
+
+\subsection{Użycie \texttt{defineAsyncComponent}}
+Vue 3 wprowadza \texttt{defineAsyncComponent} do definiowania komponentów asynchronicznych.
+
+\begin{lstlisting}[language=JavaScript]
+import { defineAsyncComponent } from 'vue';
+
+const MyComponent = defineAsyncComponent(() =>
+  import('./MyComponent.vue')
+);
+
+export default {
+  components: {
+    MyComponent
+  }
+};
+\end{lstlisting}
+
+\section{Middleware i Ochrona Tras w Vue Router}
+Middleware to funkcje, które mogą być używane do ochrony tras w Vue Router przed nieautoryzowanym dostępem.
+
+\subsection{Przykład Middleware Autoryzacji}
+Możemy stworzyć prosty middleware, który sprawdzi, czy użytkownik jest zalogowany:
+
+\begin{lstlisting}[language=JavaScript]
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('authToken');
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next('/login');
+  } else {
+    next();
+  }
+});
+\end{lstlisting}
+
+\subsection{Ochrona Tras}
+Następnie, możemy oznaczyć trasy, które wymagają autoryzacji:
+
+\begin{lstlisting}[language=JavaScript]
+const routes = [
+  {
+    path: '/dashboard',
+    component: Dashboard,
+    meta: { requiresAuth: true }
+  },
+  { path: '/login', component: Login }
+];
+\end{lstlisting}
+
+\section{Praca z Animacjami i Przejściami}
+Vue.js oferuje wbudowane narzędzia do animacji i przejść między komponentami i elementami DOM.
+
+\subsection{Typy klas w \texttt{transition}}
+W Vue.js, gdy używamy komponentu \texttt{transition}, automatycznie stosowane są odpowiednie klasy CSS na różnych etapach cyklu życia animacji. Oto pełna lista klas:
+
+\begin{itemize}
+    \item \texttt{v-enter} - Stosowana na początku fazy wejścia (element jest dodawany do DOM).
+    \item \texttt{v-enter-active} - Aktywna przez cały czas trwania fazy wejścia.
+    \item \texttt{v-enter-to} - Stosowana na końcu fazy wejścia (Vue 2.x: \texttt{v-enter-active}, Vue 3.x: \texttt{v-enter-to}).
+    \item \texttt{v-leave} - Stosowana na początku fazy wyjścia (element jest usuwany z DOM).
+    \item \texttt{v-leave-active} - Aktywna przez cały czas trwania fazy wyjścia.
+    \item \texttt{v-leave-to} - Stosowana na końcu fazy wyjścia.
+\end{itemize}
+
+Przykład zastosowania tych klas w stylach CSS:
+
+\begin{lstlisting}[language=CSS]
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+\end{lstlisting}
+
+W powyższym przykładzie klasy \texttt{.fade-enter} i \texttt{.fade-leave-to} ustawiają początkową i końcową przezroczystość elementu, natomiast \texttt{.fade-enter-active} i \texttt{.fade-leave-active} odpowiadają za animację samej zmiany przezroczystości.
+
+
+\subsection{Użycie \texttt{transition}}
+\texttt{transition} to wbudowany komponent do obsługi animacji.
+
+\begin{lstlisting}[language=HTML]
+<template>
+  <transition name="fade">
+    <p v-if="visible">Animowany tekst</p>
+  </transition>
+</template>
+
+<script>
+export default {
+  data() {
+    return { visible: true };
+  }
+};
+</script>
+
+<style>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+</style>
+\end{lstlisting}
+
+\subsection{Animacje w Grupach}
+\texttt{transition-group} pozwala na animowanie list elementów.
+
+\begin{lstlisting}[language=HTML]
+<template>
+  <transition-group name="list">
+    <div v-for="item in items" :key="item.id">
+      {{ item.text }}
+    </div>
+  </transition-group>
+</template>
+
+<style>
+.list-enter-active, .list-leave-active {
+  transition: all 0.5s;
+}
+.list-enter, .list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+</style>
+\end{lstlisting}
+
+\section{Testowanie w Vue.js}
+Testowanie jednostkowe jest kluczowe dla utrzymania jakości kodu. Vue.js wspiera testowanie za pomocą narzędzi takich jak Jest i Vue Test Utils.
+
+\subsection{Proste Testy Jednostkowe}
+Przykład testu jednostkowego dla komponentu:
+
+\begin{lstlisting}[language=JavaScript]
+import { mount } from '@vue/test-utils';
+import MyComponent from '@/components/MyComponent.vue';
+
+describe('MyComponent', () => {
+  it('renders a message', () => {
+    const wrapper = mount(MyComponent, {
+      props: { msg: 'Hello Vue' }
+    });
+    expect(wrapper.text()).toContain('Hello Vue');
+  });
+});
+\end{lstlisting}
+
+\subsection{Testowanie Emitowania Zdarzeń}
+Testowanie, czy komponent poprawnie emituje zdarzenia:
+
+\begin{lstlisting}[language=JavaScript]
+it('emits an event when button is clicked', async () => {
+  const wrapper = mount(MyComponent);
+  await wrapper.find('button').trigger('click');
+  expect(wrapper.emitted()).toHaveProperty('my-event');
+});
+\end{lstlisting}
+
+\section{Optymalizacja Aplikacji Vue.js}
+Optymalizacja aplikacji Vue.js może znacząco poprawić jej wydajność.
+
+\subsection{Minimalizacja Renderów}
+Unikaj niepotrzebnych renderów za pomocą funkcji \texttt{shouldComponentUpdate} i efektywnego korzystania z \texttt{v-if} oraz \texttt{v-show}.
+
+\subsection{Memoizacja}
+Używaj funkcji \texttt{computed} oraz \texttt{watch}, aby zoptymalizować powtarzające się obliczenia.
+
+\begin{lstlisting}[language=JavaScript]
+computed: {
+  expensiveCalculation() {
+    return this.items.reduce((sum, item) => sum + item.value, 0);
+  }
+}
+\end{lstlisting}
+
+\section{Obsługa Modułów Vuex}
+W większych aplikacjach warto podzielić Vuex na moduły.
+
+\subsection{Tworzenie Modułów}
+Przykład tworzenia modułu Vuex:
+
+\begin{lstlisting}[language=JavaScript]
+const moduleA = {
+  state: () => ({ count: 0 }),
+  mutations: {
+    increment(state) {
+      state.count++;
+    }
+  }
+};
+
+export default new Vuex.Store({
+  modules: {
+    a: moduleA
+  }
+});
+\end{lstlisting}
+
+\subsection{Dostęp do Modułów w Komponentach}
+Dostęp do modułów w komponentach:
+
+\begin{lstlisting}[language=JavaScript]
+computed: {
+  countA() {
+    return this.$store.state.a.count;
+  }
+}
+\end{lstlisting}
+
+\section{Integracja z API i Autoryzacja}
+Integracja z zewnętrznymi API oraz zarządzanie autoryzacją użytkowników to kluczowe elementy w nowoczesnych aplikacjach.
+
+\subsection{Wysyłanie Żądań HTTP z Axios}
+Vue.js nie ma wbudowanego modułu do obsługi żądań HTTP, ale możemy użyć biblioteki \texttt{axios}.
+
+\begin{lstlisting}[language=JavaScript]
+import axios from 'axios';
+
+export default {
+  data() {
+    return {
+      userData: null
+    };
+  },
+  methods: {
+    async fetchData() {
+      try {
+        const response = await axios.get('/api/user');
+        this.userData = response.data;
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    }
+  },
+  mounted() {
+    this.fetchData();
+  }
+};
+\end{lstlisting}
+
+\subsection{Zarządzanie Tokenami Autoryzacji}
+Przykład zarządzania tokenami autoryzacji:
+
+\begin{lstlisting}[language=JavaScript]
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+\end{lstlisting}
+
+\section{Podsumowanie}
+Dodane sekcje rozszerzają zakres notatek o Vue.js, obejmując zaawansowane techniki i najlepsze praktyki, które są kluczowe dla efektywnego tworzenia nowoczesnych aplikacji. Każda z tych sekcji dostarcza praktycznych przykładów i kodu, który może być bezpośrednio zastosowany w rzeczywistych projektach.
+
+
+\end{document}
