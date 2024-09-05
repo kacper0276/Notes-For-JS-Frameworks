@@ -1,0 +1,233 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+
+\geometry{a4paper, margin=1in}
+
+\title{Docker: Przewodnik po Podstawowych Poleceniach i Integracji z Frameworkami}
+\author{Kacper Renkel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\newpage
+
+\section{Wprowadzenie do Dockera}
+Docker to platforma, która umożliwia deweloperom i administratorom systemów tworzenie, wdrażanie i uruchamianie aplikacji w kontenerach. Kontenery pozwalają na spójne środowisko uruchomieniowe niezależnie od infrastruktury.
+
+\section{Podstawowe Polecenia Dockera}
+
+\subsection{Zarządzanie Obrazami}
+\begin{itemize}
+    \item \textbf{docker pull} - Pobieranie obrazu z Docker Hub.
+    \item \textbf{docker images} - Wyświetlanie listy lokalnie dostępnych obrazów.
+    \item \textbf{docker rmi} - Usuwanie obrazu.
+\end{itemize}
+
+\subsection{Zarządzanie Kontenerami}
+\begin{itemize}
+    \item \textbf{docker run} - Tworzenie i uruchamianie nowego kontenera.
+    \item \textbf{docker ps} - Wyświetlanie uruchomionych kontenerów.
+    \item \textbf{docker stop} - Zatrzymywanie kontenera.
+    \item \textbf{docker rm} - Usuwanie zatrzymanego kontenera.
+\end{itemize}
+
+\subsection{Zarządzanie Sieciami}
+\begin{itemize}
+    \item \textbf{docker network create} - Tworzenie nowej sieci.
+    \item \textbf{docker network ls} - Wyświetlanie listy sieci.
+    \item \textbf{docker network inspect} - Wyświetlanie szczegółów sieci.
+    \item \textbf{docker network rm} - Usuwanie sieci.
+\end{itemize}
+
+\subsection{Zarządzanie Woluminami}
+\begin{itemize}
+    \item \textbf{docker volume create} - Tworzenie nowego wolumenu.
+    \item \textbf{docker volume ls} - Wyświetlanie listy woluminów.
+    \item \textbf{docker volume inspect} - Wyświetlanie szczegółów wolumenu.
+    \item \textbf{docker volume rm} - Usuwanie wolumenu.
+\end{itemize}
+
+\section{Zarządzanie Sieciami w Dockerze}
+Docker umożliwia tworzenie i zarządzanie różnymi typami sieci, w tym bridge, host i overlay.
+
+\subsection{Tworzenie Sieci}
+Polecenie \texttt{docker network create} służy do tworzenia nowej sieci. Na przykład:
+\begin{lstlisting}[language=bash]
+docker network create my_network
+\end{lstlisting}
+
+\subsection{Inspekcja Sieci}
+Aby zobaczyć szczegóły sieci:
+\begin{lstlisting}[language=bash]
+docker network inspect my_network
+\end{lstlisting}
+
+\subsection{Usuwanie Sieci}
+Usuwanie sieci za pomocą:
+\begin{lstlisting}[language=bash]
+docker network rm my_network
+\end{lstlisting}
+
+\section{Uruchamianie Terminala Kontenera}
+Aby uruchomić interaktywną sesję w kontenerze:
+\begin{lstlisting}[language=bash]
+docker exec -it <container_id> /bin/bash
+\end{lstlisting}
+
+\section{Polecenia używane w Dockerfile}
+
+Dockerfile jest plikiem tekstowym, który zawiera wszystkie instrukcje potrzebne do zbudowania obrazu Dockera.
+
+\begin{itemize}
+    \item \textbf{FROM} - Określa bazowy obraz, na którym będzie budowany nowy obraz. Może być z Docker Hub lub z innego rejestru.
+    \item \textbf{RUN} - Uruchamia komendy w czasie budowania obrazu. Służy do instalowania zależności i konfiguracji systemu.
+    \item \textbf{CMD} - Definiuje domyślne polecenie do uruchomienia po starcie kontenera. Może być nadpisane przez \texttt{docker run}.
+    \item \textbf{EXPOSE} - Deklaruje otwarty port, na którym aplikacja będzie dostępna.
+    \item \textbf{ENV} - Ustawia zmienne środowiskowe wewnątrz obrazu.
+    \item \textbf{COPY} i \textbf{ADD} - Kopiuje pliki do obrazu. \textbf{COPY} służy do kopiowania plików z hosta, a \textbf{ADD} obsługuje także pobieranie z URL.
+    \item \textbf{WORKDIR} - Ustawia katalog roboczy kontenera, w którym będą wykonywane wszystkie następne komendy.
+    \item \textbf{ENTRYPOINT} - Ustawia domyślne polecenie, które nie może być nadpisane. Często używane z \textbf{CMD}.
+    \item \textbf{ARG} - Definiuje zmienne używane tylko w trakcie budowania obrazu.
+    \item \textbf{VOLUME} - Definiuje punkt montowania woluminu.
+    \item \textbf{LABEL} - Służy do dodawania metadanych do obrazu, takich jak wersje, informacje o autorze.
+    \item \textbf{USER} - Określa użytkownika, w kontekście którego będą wykonywane polecenia w kontenerze.
+    \item \textbf{ONBUILD} - Definiuje instrukcje, które mają być uruchamiane w czasie budowy obrazu pochodnego.
+\end{itemize}
+
+\section{Polecenia używane w docker-compose}
+
+`docker-compose.yml` jest plikiem definiującym konfigurację wielu kontenerów dla aplikacji wielousługowych.
+
+\begin{itemize}
+    \item \textbf{version} - Wersja używanego API Compose, np. '3.8'.
+    \item \textbf{services} - Definiuje listę usług (kontenerów) w aplikacji.
+    \item \textbf{image} - Określa obraz do uruchomienia kontenera.
+    \item \textbf{build} - Budowanie obrazów z Dockerfile.
+    \item \textbf{volumes} - Montowanie woluminów. Pozwala na współdzielenie plików między hostem a kontenerem.
+    \item \textbf{networks} - Konfiguracja sieci między kontenerami.
+    \item \textbf{environment} - Ustawianie zmiennych środowiskowych w kontenerze.
+    \item \textbf{ports} - Mapowanie portów między hostem a kontenerem.
+    \item \textbf{depends\_on} - Określa kolejność uruchamiania kontenerów.
+    \item \textbf{command} - Zmienia domyślne polecenie uruchamiane w kontenerze.
+    \item \textbf{restart} - Definiuje politykę restartu kontenera, np. \texttt{always}, \texttt{on-failure}.
+    \item \textbf{links} - Tworzenie połączeń między kontenerami.
+    \item \textbf{extra\_hosts} - Dodawanie wpisów do pliku /etc/hosts w kontenerze.
+    \item \textbf{secrets} - Ustawia tajemnice używane przez kontenery, np. hasła.
+    \item \textbf{configs} - Zarządza konfiguracjami do użycia w kontenerach.
+\end{itemize}
+
+\section{Automatyczne przeładowanie kontenera po zmianach w plikach}
+
+Aby osiągnąć automatyczne przeładowanie kontenerów w Dockerze po zmianach w plikach, można skorzystać z mechanizmu woluminów Dockera. Woluminy pozwalają na synchronizację plików między systemem plików hosta a kontenerem, dzięki czemu zmiany w kodzie źródłowym na hoście są od razu odzwierciedlane w kontenerze. Dzięki temu, po odpowiednim skonfigurowaniu kontenerów, zmiany w plikach będą automatycznie przeładowywać aplikację wewnątrz kontenera.
+
+\section{Przykłady konfiguracji dla różnych frameworków}
+
+Poniżej znajdują się przykłady konfiguracji plików Dockerfile i docker-compose.yml dla różnych popularnych frameworków i języków.
+
+\subsection{Node.js i NestJS}
+
+Dockerfile:
+\begin{lstlisting}[language=Dockerfile]
+FROM node:14
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["node", "app.js"]
+\end{lstlisting}
+
+docker-compose.yml:
+\begin{lstlisting}[language=yaml]
+version: '3'
+services:
+  node-app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+\end{lstlisting}
+
+\subsection{Angular, Vue.js, React}
+
+Dockerfile dla Angulara:
+\begin{lstlisting}[language=Dockerfile]
+FROM node:14
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 4200
+CMD ["npm", "start"]
+\end{lstlisting}
+
+docker-compose.yml:
+\begin{lstlisting}[language=yaml]
+version: '3'
+services:
+  frontend:
+    build: .
+    ports:
+      - "4200:4200"
+    volumes:
+      - .:/app
+\end{lstlisting}
+
+\subsection{Spring Boot}
+
+Dockerfile:
+\begin{lstlisting}[language=Dockerfile]
+FROM openjdk:11
+WORKDIR /app
+COPY . .
+RUN ./mvnw package
+EXPOSE 8080
+CMD ["java", "-jar", "target/myapp.jar"]
+\end{lstlisting}
+
+docker-compose.yml:
+\begin{lstlisting}[language=yaml]
+version: '3'
+services:
+  spring-app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+\end{lstlisting}
+
+\subsection{.NET Core}
+
+Dockerfile:
+\begin{lstlisting}[language=Dockerfile]
+FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
+WORKDIR /app
+COPY . .
+EXPOSE 5000
+CMD ["dotnet", "myapp.dll"]
+\end{lstlisting}
+
+docker-compose.yml:
+\begin{lstlisting}[language=yaml]
+version: '3'
+services:
+  dotnet-app:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+\end{lstlisting}
+
+\section{Podsumowanie}
+Docker jest potężnym narzędziem, które umożliwia łatwe tworzenie, wdrażanie i uruchamianie aplikacji w kontenerach. Dzięki użyciu Dockerfile i docker-compose, można zautomatyzować procesy budowy i uruchamiania aplikacji oraz zarządzać ich środowiskiem. Integracja z popularnymi frameworkami pozwala na łatwe tworzenie przenośnych aplikacji, które mogą być uruchamiane w różnych środowiskach bez zmian w kodzie.
+\end{document}
