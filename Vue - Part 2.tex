@@ -861,6 +861,219 @@ axios.interceptors.request.use(config => {
 });
 \end{lstlisting}
 
+\section{Obsługa Stanu Ładowania}
+
+Przy większych aplikacjach można dzielić aplikację na mniejsze części i ładować dany komponent z serwera, gdy jest to potrzebne. Vue.js pozwala na definiowanie komponentu jako fabryki, która asynchronicznie ładuje komponent. Funkcja fabryki jest uruchamiana tylko wtedy, gdy komponent ma być wyrenderowany, a wynik jest zapisywany w pamięci podręcznej na potrzeby przyszłych renderowań. Od wersji 2.3 fabryka może zwracać obiekt w następującym formacie:
+
+\begin{lstlisting}
+const AsyncComponent = () => ({
+  // Komponent do załadowania (powinien być Promisem)
+  component: import('./MyComponent.vue'),
+  // Komponent do użycia podczas ładowania asynchronicznego komponentu
+  loading: LoadingComponent,
+  // Komponent do użycia, jeśli ładowanie się nie powiedzie
+  error: ErrorComponent,
+  // Opóźnienie przed pokazaniem komponentu ładowania. Domyślnie: 200 ms.
+  delay: 200,
+  // Komponent błędu będzie wyświetlony, jeśli zostanie przekroczony czas. Domyślnie: Infinity.
+  timeout: 3000
+})
+\end{lstlisting}
+
+Dzięki takiemu podejściu masz dodatkowe opcje kontroli procesu ładowania, obsługi stanów błędów, ustawiania opóźnień w ładowaniu komponentów oraz reagowania na upłynięcie limitu czasu.
+
+\section{Cheap Static Components z \texttt{v-once}}
+
+Renderowanie elementów czystego HTML-a jest w Vue.js bardzo szybkie. Czasami możesz posiadać komponenty zawierające dużo statycznej zawartości. W takich przypadkach można upewnić się, że komponent jest renderowany tylko raz i potem przechowywany w pamięci podręcznej, dodając dyrektywę \texttt{v-once} do głównego elementu:
+
+\begin{lstlisting}
+Vue.component('terms-of-service', {
+  template: `
+    <div v-once>
+      <h1>Terms of Service</h1>
+      ... a lot of static content ...
+    </div>
+  `
+})
+\end{lstlisting}
+
+Dzięki temu Vue.js zrenderuje dany element tylko raz i zapisze go w pamięci, co może znacząco poprawić wydajność przy pracy z dużą ilością statycznych danych.
+
+\section{Komponenty Rekurencyjne}
+
+Komponenty mogą rekurencyjnie wywoływać się w swoim własnym szablonie, ale mogą to zrobić tylko wtedy, gdy mają ustawioną opcję \texttt{name}. Jeśli nie będziesz uważać, rekurencyjne komponenty mogą doprowadzić do nieskończonej pętli:
+
+\begin{lstlisting}
+Vue.component('stack-overflow', {
+  name: 'stack-overflow',
+  template: '<div><stack-overflow></stack-overflow></div>'
+})
+\end{lstlisting}
+
+Taki kod spowoduje błąd "max stack size exceeded". Aby uniknąć tego problemu, należy upewnić się, że wywołanie rekurencyjne jest warunkowe, np. przy użyciu \texttt{v-if}, które w pewnym momencie stanie się \texttt{false}.
+
+\section{Szablony Inline}
+
+Atrybut \texttt{inline-template} w Vue.js pozwala na definiowanie wewnętrznej zawartości komponentu jako jego własnego szablonu, zamiast traktować ją jako treść. Dzięki temu możemy tworzyć bardziej elastyczne szablony.
+
+\begin{lstlisting}
+<my-component inline-template>
+  <div>
+    <p>These are compiled as the component's own template.</p>
+    <p>Not parent's transclusion content.</p>
+  </div>
+</my-component>
+\end{lstlisting}
+
+Jednak szablony inline są jedną z trzech przestarzałych funkcji Vue i nie powinno się ich raczej używać. Alternatywą jest użycie tagu \texttt{<script>} lub slotów domyślnych.
+
+\section{Dynamiczne Argumenty Dyrektyw}
+
+Argumenty dyrektyw mogą być dynamiczne, co czyni niestandardowe dyrektywy bardziej elastycznymi i użytecznymi w różnych częściach aplikacji. W przypadku dyrektywy \texttt{v-mydirective:[argument]="value"}, argument można zaktualizować na podstawie danych komponentu.
+
+\begin{lstlisting}
+<div id="dynamicexample">
+  <h3>Scroll down inside this section ↓</h3>
+  <p v-pin:[direction]="200">I am pinned onto the page at 200px to the left.</p>
+</div>
+
+Vue.directive('pin', {
+  bind: function (el, binding, vnode) {
+    el.style.position = 'fixed'
+    var s = (binding.arg == 'left' ? 'left' : 'top')
+    el.style[s] = binding.value + 'px'
+  }
+})
+
+new Vue({
+  el: '#dynamicexample',
+  data: function () {
+    return {
+      direction: 'left'
+    }
+  }
+})
+\end{lstlisting}
+
+\section{Modyfikatory Zdarzeń i Klawiszy}
+
+Vue.js oferuje różne modyfikatory dla zdarzeń, takie jak \texttt{.passive}, \texttt{.capture} i \texttt{.once}, z prefiksami, które można stosować z dyrektywą \texttt{v-on}:
+
+\begin{lstlisting}
+on: {
+  '!click': this.doThisInCapturingMode,
+  '~keyup': this.doThisOnce,
+  '~!mouseover': this.doThisOnceInCapturingMode
+}
+\end{lstlisting}
+
+Dla innych modyfikatorów zdarzeń i klawiszy prefiks nie jest wymagany, a metody zdarzeń można wywoływać bezpośrednio w handlerach.
+
+\subsection{Jak Działają Modyfikatory Zdarzeń?}
+
+Modyfikatory zdarzeń w Vue.js umożliwiają kontrolę nad sposobem, w jaki zdarzenia są wywoływane i obsługiwane przez przeglądarkę. Poniżej omówiono kilka kluczowych modyfikatorów:
+
+\begin{itemize}
+    \item \textbf{\texttt{.capture}}: Zmienia domyślny sposób propagacji zdarzeń na fazę "przechwytywania" (ang. \textit{capturing}). Domyślnie zdarzenia propagują się od najgłębszego elementu do góry (tzw. bąbelkowanie). Użycie \texttt{.capture} powoduje propagację zdarzenia od korzenia dokumentu w dół (od rodzica do dzieci).
+
+    \begin{lstlisting}
+    <button v-on:click.capture="doSomething">Kliknij mnie</button>
+    \end{lstlisting}
+
+    W tym przykładzie, jeśli zdarzenie kliknięcia zostanie wywołane na jakimś potomku tego przycisku, najpierw zostanie uruchomiona funkcja \texttt{doSomething}, zanim jakiekolwiek inne zdarzenie kliknięcia wewnątrz drzewa DOM zostanie obsłużone.
+
+    \item \textbf{\texttt{.once}}: Gwarantuje, że dany event handler zostanie wywołany tylko raz. Po pierwszym wywołaniu handlera, zostanie on automatycznie odpięty od elementu.
+
+    \begin{lstlisting}
+    <button v-on:click.once="doSomething">Kliknij mnie</button>
+    \end{lstlisting}
+
+    W powyższym przykładzie funkcja \texttt{doSomething} zostanie uruchomiona tylko za pierwszym razem, gdy użytkownik kliknie przycisk.
+
+    \item \textbf{\texttt{.passive}}: Jest używany, aby zapobiec domyślnej akcji związanej ze zdarzeniem, np. przewijaniem. Kiedy używamy \texttt{.passive}, mówi to przeglądarce, aby nie czekała na wykonanie handlera zdarzenia przed uruchomieniem domyślnej akcji. Może to poprawić wydajność, szczególnie w przypadku obsługi zdarzeń przewijania.
+
+    \begin{lstlisting}
+    <div v-on:scroll.passive="onScroll">...</div>
+    \end{lstlisting}
+
+    W tym przykładzie przeglądarka może swobodnie przewijać zawartość \texttt{div}, bez czekania na wywołanie \texttt{onScroll}.
+\end{itemize}
+
+\subsection{Użycie Prefiksów \texttt{!} i \texttt{\textasciitilde}}
+
+Vue.js wprowadza specjalne prefiksy, które mogą być używane z modyfikatorami:
+
+\begin{itemize}
+    \item \textbf{\texttt{!}}: Odpowiada za modyfikator \texttt{.capture}. Prefiks \texttt{!} przed zdarzeniem jest skrótem do użycia modyfikatora \texttt{.capture}.
+    \item \textbf{\texttt{\textasciitilde}}: Odpowiada za modyfikator \texttt{.once}. Prefiks \texttt{\textasciitilde} przed zdarzeniem jest skrótem do użycia modyfikatora \texttt{.once}.
+    \item \textbf{\texttt{\textasciitilde!}}: Połączenie dwóch prefiksów \texttt{\textasciitilde} i \texttt{!}, czyli użycie zarówno \texttt{.once}, jak i \texttt{.capture}.
+\end{itemize}
+
+\subsection{Przykład Użycia}
+
+Przykład poniżej pokazuje, jak można użyć modyfikatorów i ich prefiksów w obiekcie \texttt{on}:
+
+\begin{lstlisting}
+new Vue({
+  el: '#app',
+  methods: {
+    doThisInCapturingMode() {
+      console.log('Kliknięcie w trybie przechwytywania');
+    },
+    doThisOnce() {
+      console.log('To wykonuje się tylko raz.');
+    },
+    doThisOnceInCapturingMode() {
+      console.log('Raz w trybie przechwytywania');
+    }
+  },
+  template: `
+    <div>
+      <button v-on:click="doThisInCapturingMode">Bez modyfikatora</button>
+      <button v-on:!click="doThisInCapturingMode">Z !prefiksem</button>
+      <button v-on:~keyup="doThisOnce">Z ~prefiksem</button>
+      <button v-on:~!mouseover="doThisOnceInCapturingMode">Z ~!prefiksem</button>
+    </div>
+  `
+})
+\end{lstlisting}
+
+W tym przykładzie:
+\begin{itemize}
+    \item \texttt{v-on:!click} jest odpowiednikiem \texttt{v-on:click.capture}.
+    \item \texttt{v-on:~keyup} jest odpowiednikiem \texttt{v-on:keyup.once}.
+    \item \texttt{v-on:~!mouseover} jest odpowiednikiem \texttt{v-on:mouseover.capture.once}.
+\end{itemize}
+
+\subsection{Podsumowanie}
+
+Modyfikatory zdarzeń w Vue.js pozwalają na bardziej zaawansowane zarządzanie sposobem obsługi zdarzeń. Prefiksy, takie jak \texttt{!} (dla \texttt{.capture}) i \texttt{\textasciitilde} (dla \texttt{.once}), pozwalają na bardziej zwięzłe zapisywanie konfiguracji modyfikatorów, co sprawia, że kod jest bardziej czytelny i elastyczny w zależności od potrzeb.
+
+\section{Wstrzykiwanie Zależności (Provide/Inject)}
+
+Vue.js wprowadził mechanizm wstrzykiwania zależności za pomocą \texttt{provide/inject} od wersji 2.2. Umożliwia to komponentowi nadrzędnemu dostarczenie zależności do wszystkich jego podrzędnych komponentów, niezależnie od ich poziomu w hierarchii.
+
+\begin{lstlisting}
+// Komponent nadrzędny dostarczający 'foo'
+var Provider = {
+  provide: {
+    foo: 'bar'
+  },
+  // ...
+}
+
+// Komponent podrzędny wstrzykujący 'foo'
+var Child = {
+  inject: ['foo'],
+  created () {
+    console.log(this.foo) // => "bar"
+  }
+  // ...
+}
+\end{lstlisting}
+
+Jest to bardzo podobne do mechanizmu kontekstowego (Context) w React.
+
 \section{Podsumowanie}
 Dodane sekcje rozszerzają zakres notatek o Vue.js, obejmując zaawansowane techniki i najlepsze praktyki, które są kluczowe dla efektywnego tworzenia nowoczesnych aplikacji. Każda z tych sekcji dostarcza praktycznych przykładów i kodu, który może być bezpośrednio zastosowany w rzeczywistych projektach.
 
